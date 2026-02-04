@@ -23,17 +23,12 @@
 
 <p align="center">
   <a href="#features">Features</a> |
-  <a href="#demo">Demo</a> |
+  <a href="https://kidsbot-nfmrgkmdk8c5uem9jwctj6.streamlit.app">Demo</a> |
   <a href="#architecture">Architecture</a> |
   <a href="#installation">Installation</a> |
   <a href="#roadmap">Roadmap</a>
 </p>
 
-<p align="center">
-  <a href="https://kidsbot-nfmrgkmdk8c5uem9jwctj6.streamlit.app/">
-    <img src="https://img.shields.io/badge/Try_Live_Demo-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white" alt="Live Demo"/>
-  </a>
-</p>
 
 ---
 
