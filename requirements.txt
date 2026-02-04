@@ -32,8 +32,9 @@ tqdm>=4.66.0
 # Speaker Verification
 resemblyzer>=0.1.4
 webrtcvad-wheels>=2.0.14
-numpy>=1.24.0
+numpy>=1.24.0,<2.0.0
 torch>=2.0.0
+librosa>=0.10.0
 
 # Web Interface (st.audio_input requires 1.33+)
 streamlit>=1.33.0
