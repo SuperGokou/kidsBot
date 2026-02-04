@@ -567,72 +567,42 @@ def render_jarvis_controls(config: dict):
 
     is_active = st.session_state.is_listening_active
 
-    # Colors based on state
+    # Colors and text based on state
     if is_active:
-        bg_color = "#E74C3C"
+        btn_type = "primary"
         btn_text = "Stop"
     else:
-        bg_color = "#FF9F1C"
+        btn_type = "secondary"
         btn_text = "Start"
 
-    # Render centered HTML button that triggers hidden Streamlit button
-    st.markdown(f"""
+    # Style the button container
+    st.markdown("""
     <style>
-    .jarvis-btn-container {{
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        padding: 20px 0;
-        width: 100%;
-    }}
-    .jarvis-btn {{
-        background: linear-gradient(145deg, {bg_color}, {bg_color}dd);
-        color: white;
-        border: none;
-        border-radius: 50%;
-        width: 80px;
-        height: 80px;
-        font-weight: bold;
-        font-size: 16px;
-        cursor: pointer;
-        box-shadow: 0 8px 25px rgba(0,0,0,0.25);
-        transition: all 0.2s ease;
-        font-family: "Source Sans Pro", sans-serif;
-    }}
-    .jarvis-btn:hover {{
-        transform: scale(1.08);
-        box-shadow: 0 12px 35px rgba(0,0,0,0.35);
-    }}
-    .jarvis-btn:active {{
-        transform: scale(0.95);
-    }}
-    /* Hide the actual Streamlit button */
-    .st-key-jarvis_toggle {{
-        position: absolute !important;
-        left: -9999px !important;
-        visibility: hidden !important;
-    }}
+    .stButton > button {
+        border-radius: 50% !important;
+        width: 80px !important;
+        height: 80px !important;
+        font-weight: bold !important;
+        font-size: 16px !important;
+    }
     </style>
-
-    <div class="jarvis-btn-container">
-        <button class="jarvis-btn" onclick="
-            var btn = window.parent.document.querySelector('.st-key-jarvis_toggle button');
-            if (btn) btn.click();
-        ">{btn_text}</button>
-    </div>
     """, unsafe_allow_html=True)
 
-    # Hidden Streamlit button for state management
-    if is_active:
-        st.button(btn_text, key="jarvis_toggle", on_click=stop_listening_callback)
-    else:
-        if st.button(btn_text, key="jarvis_toggle"):
-            st.session_state.is_listening_active = True
-            st.session_state.jarvis_active = True
-            st.session_state.jarvis_phase = "greeting"
-            st.session_state.jarvis_error = ""
-            st.session_state.jarvis_greeting = True
-            st.rerun()
+    # Center the button
+    col1, col2, col3 = st.columns([1, 1, 1])
+    with col2:
+        if is_active:
+            if st.button(btn_text, key="jarvis_toggle", type="primary", use_container_width=True):
+                stop_listening_callback()
+                st.rerun()
+        else:
+            if st.button(btn_text, key="jarvis_toggle", type="secondary", use_container_width=True):
+                st.session_state.is_listening_active = True
+                st.session_state.jarvis_active = True
+                st.session_state.jarvis_phase = "greeting"
+                st.session_state.jarvis_error = ""
+                st.session_state.jarvis_greeting = True
+                st.rerun()
 
 
 def handle_jarvis_stop(config: dict):
@@ -864,6 +834,11 @@ def chat_view(config: dict):
     # JARVIS CONTINUOUS CONVERSATION LOOP
     # =========================================================================
     if st.session_state.is_listening_active:
+        # Show status indicator ONCE based on current phase (not in each branch)
+        phase = st.session_state.jarvis_phase
+        if phase in ("listening", "processing", "speaking", "greeting"):
+            status_map = {"greeting": "speaking", "listening": "listening", "processing": "processing", "speaking": "speaking"}
+            render_jarvis_status(status_map.get(phase, "listening"))
         # Check if microphone is available (PyAudio required)
         if not st.session_state.microphone_available:
             st.warning("Microphone not available. Use the browser audio input instead.")
@@ -876,8 +851,6 @@ def chat_view(config: dict):
         audio_manager = get_audio_manager(config)
         audio_manager.clear_stop_request()
 
-        phase = st.session_state.jarvis_phase
-
         # -----------------------------------------------------------------
         # GREETING PHASE: Play initial greeting when conversation starts
         # -----------------------------------------------------------------
@@ -887,9 +860,6 @@ def chat_view(config: dict):
                 "role": "assistant",
                 "content": greeting
             })
-
-            # Show speaking status
-            render_jarvis_status("speaking")
 
             # Speak the greeting using AudioManager
             audio_manager.speak(greeting)
@@ -903,9 +873,6 @@ def chat_view(config: dict):
         # LISTENING PHASE: Wait for user speech with VAD auto-stop
         # -----------------------------------------------------------------
         elif phase == "listening":
-            # Show listening status indicator
-            render_jarvis_status("listening")
-
             # Create temp file for voice verification
             with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
                 tmp_path = tmp.name
@@ -950,8 +917,6 @@ def chat_view(config: dict):
         # Includes voice control: mode switching and action tags
         # -----------------------------------------------------------------
         elif phase == "processing":
-            render_jarvis_status("processing")
-
             user_text = st.session_state.jarvis_text
 
             # Add user message to history
