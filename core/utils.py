@@ -116,26 +116,31 @@ def load_config(config_path: str = DEFAULT_CONFIG_PATH) -> dict:
     Returns:
         Configuration dictionary, empty dict if file not found
     """
-    # Try relative path first
-    config_file = Path(config_path)
-    if config_file.exists():
-        with open(config_file, "r", encoding="utf-8") as f:
-            return yaml.safe_load(f) or {}
+    paths_to_try = [
+        # 1. Relative path from cwd
+        Path(config_path),
+        # 2. Relative to this file's location (core/utils.py -> project root)
+        Path(__file__).resolve().parent.parent / config_path,
+        # 3. Streamlit Cloud paths (various possible mount points)
+        Path("/mount/src/kidsbot") / config_path,
+        Path("/mount/src/kidsBot") / config_path,
+        Path("/app") / config_path,
+    ]
 
-    # Try relative to this file's parent (project root)
-    project_root = Path(__file__).parent.parent
-    config_file = project_root / config_path
-    if config_file.exists():
-        with open(config_file, "r", encoding="utf-8") as f:
-            return yaml.safe_load(f) or {}
+    # Also try finding config relative to /mount/src/*
+    mount_src = Path("/mount/src")
+    if mount_src.exists():
+        for subdir in mount_src.iterdir():
+            if subdir.is_dir():
+                paths_to_try.append(subdir / config_path)
 
-    # Try /mount/src/kidsbot for Streamlit Cloud
-    cloud_path = Path("/mount/src/kidsbot") / config_path
-    if cloud_path.exists():
-        with open(cloud_path, "r", encoding="utf-8") as f:
-            return yaml.safe_load(f) or {}
+    for p in paths_to_try:
+        if p.exists():
+            print(f"[Config] Found config at: {p}")
+            with open(p, "r", encoding="utf-8") as f:
+                return yaml.safe_load(f) or {}
 
-    print(f"[Config] Warning: Config file not found at {config_path}")
+    print(f"[Config] Warning: Config file not found. Tried: {[str(p) for p in paths_to_try]}")
     return {}
 
 
