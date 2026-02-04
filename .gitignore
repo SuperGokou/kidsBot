@@ -75,6 +75,8 @@ saved_models/
 .DS_Store
 Thumbs.db
 desktop.ini
+nul
+NUL
 
 # ===================
 # Logs & Cache
