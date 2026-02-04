@@ -9,7 +9,19 @@ from pathlib import Path
 
 import numpy as np
 import streamlit as st
-from resemblyzer import VoiceEncoder, preprocess_wav
+
+from core.registration import is_demo_mode
+
+# Lazy import resemblyzer - may not be available in demo mode
+_resemblyzer_available = False
+VoiceEncoder = None
+preprocess_wav = None
+
+try:
+    from resemblyzer import VoiceEncoder, preprocess_wav
+    _resemblyzer_available = True
+except ImportError:
+    print("[VoiceGatekeeper] Resemblyzer not available - voice verification disabled")
 
 
 # =============================================================================
@@ -17,7 +29,7 @@ from resemblyzer import VoiceEncoder, preprocess_wav
 # =============================================================================
 
 @st.cache_resource
-def load_voice_encoder() -> VoiceEncoder:
+def load_voice_encoder():
     """
     Load and cache the Resemblyzer voice encoder model.
 
@@ -25,8 +37,12 @@ def load_voice_encoder() -> VoiceEncoder:
     is only loaded once, even across Streamlit reruns.
 
     Returns:
-        Loaded VoiceEncoder model
+        Loaded VoiceEncoder model or None if not available
     """
+    if not _resemblyzer_available or VoiceEncoder is None:
+        print("[Cache] Resemblyzer not available - skipping voice encoder")
+        return None
+
     print("[Cache] Loading Resemblyzer voice encoder...")
     return VoiceEncoder()
 
@@ -55,6 +71,9 @@ class VoiceGatekeeper:
 
     Uses Resemblyzer's speaker encoder for embedding extraction
     and cosine similarity for verification.
+
+    In demo mode (cloud deployment), voice verification is disabled
+    and all users are allowed access.
     """
 
     def __init__(self, config: dict):
@@ -67,7 +86,14 @@ class VoiceGatekeeper:
         self.config = config
         voice_config = config.get("voice_security", {})
 
-        self.enabled = voice_config.get("enabled", True)
+        # Check if in demo mode - disable voice security
+        self.demo_mode = is_demo_mode()
+        if self.demo_mode:
+            print("[VoiceGatekeeper] Running in DEMO MODE - voice verification disabled")
+            self.enabled = False
+        else:
+            self.enabled = voice_config.get("enabled", True)
+
         self.threshold = voice_config.get("threshold", 0.25)
         self.owner_embedding_path = voice_config.get(
             "owner_embedding_path",
@@ -77,7 +103,7 @@ class VoiceGatekeeper:
         self.encoder = None
         self.owner_embedding = None
 
-        if self.enabled:
+        if self.enabled and _resemblyzer_available:
             self._load_model()
             self._load_owner_embedding()
 
@@ -107,6 +133,9 @@ class VoiceGatekeeper:
         Returns:
             256-dimensional speaker embedding
         """
+        if not _resemblyzer_available or preprocess_wav is None:
+            return None
+
         # Preprocess and encode
         wav = preprocess_wav(audio_path)
         embedding = self.encoder.embed_utterance(wav)
@@ -135,8 +164,17 @@ class VoiceGatekeeper:
         Returns:
             True if the speaker is verified as the owner, False otherwise
         """
+        # Demo mode - allow all access
+        if self.demo_mode:
+            return True
+
         # If voice security is disabled, always return True
         if not self.enabled:
+            return True
+
+        # If resemblyzer not available, allow access
+        if not _resemblyzer_available or self.encoder is None:
+            print("[VoiceGatekeeper] Voice encoder not available - allowing access")
             return True
 
         # If no owner embedding, warn and allow access (first-time setup)
@@ -170,7 +208,7 @@ class VoiceGatekeeper:
 
     def is_ready(self) -> bool:
         """Check if the gatekeeper is properly initialized."""
-        if not self.enabled:
+        if self.demo_mode or not self.enabled:
             return True
         return self.encoder is not None and self.owner_embedding is not None
 
