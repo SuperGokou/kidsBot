@@ -362,12 +362,6 @@ kidBot/
 
 ### Prerequisites
 
-<p align="left">
-  <img src="https://img.shields.io/badge/Python-3.10+-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python 3.10+"/>
-  <img src="https://img.shields.io/badge/pip-Latest-3776AB?style=flat-square&logo=pypi&logoColor=white" alt="pip"/>
-  <img src="https://img.shields.io/badge/Microphone-Required-green?style=flat-square" alt="Microphone"/>
-</p>
-
 - Python 3.10+
 - Microphone and speakers (for local voice interaction)
 - DeepSeek API key ([get one here](https://platform.deepseek.com/))
@@ -403,10 +397,6 @@ streamlit run app.py
 ```
 
 ### Cloud Deployment (Streamlit Cloud)
-
-<p align="left">
-  <img src="https://img.shields.io/badge/Streamlit_Cloud-Supported-FF4B4B?style=flat-square&logo=streamlit&logoColor=white" alt="Streamlit Cloud"/>
-</p>
 
 The application supports deployment on Streamlit Cloud with some limitations:
 
