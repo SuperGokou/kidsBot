@@ -792,6 +792,103 @@ hr {
     transform: scale(1.05) !important;
     box-shadow: 0 12px 35px rgba(231, 76, 60, 0.5) !important;
 }
+
+/* ============================================
+   JARVIS START/STOP BUTTON - Big Round Orange Mic
+   ============================================ */
+
+/* Container to center the button */
+.jarvis-mic-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px 0;
+    width: 100%;
+}
+
+/* The actual button - targets buttons in main area (not sidebar) */
+.main .stButton > button[kind="secondary"],
+.main [data-testid="stVerticalBlock"] > div:has(> .stButton) .stButton > button {
+    /* Override only when it's the jarvis toggle */
+}
+
+/* Animation keyframes */
+@keyframes jarvis-mic-pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+@keyframes jarvis-stop-pulse {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7), 0 8px 25px rgba(231, 76, 60, 0.5);
+    }
+    50% {
+        box-shadow: 0 0 0 15px rgba(231, 76, 60, 0), 0 8px 25px rgba(231, 76, 60, 0.5);
+    }
+}
+
+/* Start button style */
+.jarvis-start-btn .stButton > button {
+    width: 100px !important;
+    height: 100px !important;
+    min-height: 100px !important;
+    border-radius: 50% !important;
+    border: none !important;
+    background: linear-gradient(145deg, #FFD166, #FF9F1C) !important;
+    box-shadow: 0 8px 25px rgba(255, 159, 28, 0.45), inset 0 2px 4px rgba(255,255,255,0.3) !important;
+    padding: 0 !important;
+    animation: jarvis-mic-pulse 2.5s ease-in-out infinite !important;
+    color: white !important;
+    font-weight: bold !important;
+}
+
+.jarvis-start-btn .stButton > button:hover {
+    animation: none !important;
+    transform: scale(1.1) !important;
+    box-shadow: 0 12px 35px rgba(255, 159, 28, 0.55) !important;
+}
+
+.jarvis-start-btn .stButton {
+    display: flex !important;
+    justify-content: center !important;
+}
+
+/* Stop button style */
+.jarvis-stop-btn .stButton > button {
+    width: 100px !important;
+    height: 100px !important;
+    min-height: 100px !important;
+    border-radius: 50% !important;
+    border: none !important;
+    background: linear-gradient(145deg, #FF6B6B, #E74C3C) !important;
+    box-shadow: 0 8px 25px rgba(231, 76, 60, 0.5), inset 0 2px 4px rgba(255,255,255,0.2) !important;
+    padding: 0 !important;
+    animation: jarvis-stop-pulse 1.5s ease-in-out infinite !important;
+    color: white !important;
+    font-weight: bold !important;
+}
+
+.jarvis-stop-btn .stButton > button:hover {
+    animation: none !important;
+    transform: scale(1.1) !important;
+    box-shadow: 0 12px 35px rgba(231, 76, 60, 0.55) !important;
+}
+
+.jarvis-stop-btn .stButton {
+    display: flex !important;
+    justify-content: center !important;
+}
+
+/* Mic label below button */
+.jarvis-mic-label {
+    text-align: center;
+    color: #8B7355;
+    font-size: 14px;
+    font-weight: 500;
+    margin-top: 12px;
+    font-family: 'Nunito', sans-serif;
+}
 """
 
 
