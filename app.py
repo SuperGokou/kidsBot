@@ -569,10 +569,15 @@ def render_jarvis_controls(config: dict):
     btn_text = "Stop" if is_active else "Start"
     bg_color = "#E74C3C" if is_active else "#FF9F1C"
 
-    # Style only this specific button using key-based selector
+    # Style using Streamlit's key-based class selector
     st.markdown(f"""
     <style>
-    div[data-testid="stVerticalBlock"] div[data-testid="column"]:nth-child(2) .stButton > button {{
+    .st-key-jarvis_toggle {{
+        display: flex !important;
+        justify-content: center !important;
+        padding: 20px 0 !important;
+    }}
+    .st-key-jarvis_toggle button {{
         border-radius: 50% !important;
         width: 80px !important;
         height: 80px !important;
@@ -585,31 +590,27 @@ def render_jarvis_controls(config: dict):
         border: none !important;
         color: white !important;
         box-shadow: 0 8px 25px rgba(0,0,0,0.25) !important;
-        margin: 0 auto !important;
-        display: block !important;
     }}
-    div[data-testid="stVerticalBlock"] div[data-testid="column"]:nth-child(2) .stButton {{
-        display: flex !important;
-        justify-content: center !important;
+    .st-key-jarvis_toggle button:hover {{
+        transform: scale(1.05);
+        box-shadow: 0 12px 35px rgba(0,0,0,0.35) !important;
     }}
     </style>
     """, unsafe_allow_html=True)
 
-    # Center the button using columns
-    col1, col2, col3 = st.columns([1, 1, 1])
-    with col2:
-        if is_active:
-            if st.button(btn_text, key="jarvis_toggle"):
-                stop_listening_callback()
-                st.rerun()
-        else:
-            if st.button(btn_text, key="jarvis_toggle"):
-                st.session_state.is_listening_active = True
-                st.session_state.jarvis_active = True
-                st.session_state.jarvis_phase = "greeting"
-                st.session_state.jarvis_error = ""
-                st.session_state.jarvis_greeting = True
-                st.rerun()
+    # Render button (no columns needed - CSS handles centering)
+    if is_active:
+        if st.button(btn_text, key="jarvis_toggle"):
+            stop_listening_callback()
+            st.rerun()
+    else:
+        if st.button(btn_text, key="jarvis_toggle"):
+            st.session_state.is_listening_active = True
+            st.session_state.jarvis_active = True
+            st.session_state.jarvis_phase = "greeting"
+            st.session_state.jarvis_error = ""
+            st.session_state.jarvis_greeting = True
+            st.rerun()
 
 
 def handle_jarvis_stop(config: dict):
