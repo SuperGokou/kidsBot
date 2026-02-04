@@ -30,11 +30,14 @@ python-dotenv>=1.0.0
 tqdm>=4.66.0
 
 # Speaker Verification
+# Pin newer versions that support Python 3.11+
+numba>=0.57.0
+llvmlite>=0.40.0
+librosa>=0.10.0,<0.11.0
 resemblyzer>=0.1.4
 webrtcvad-wheels>=2.0.14
 numpy>=1.24.0,<2.0.0
 torch>=2.0.0
-librosa>=0.10.0
 
 # Web Interface (st.audio_input requires 1.33+)
 streamlit>=1.33.0
