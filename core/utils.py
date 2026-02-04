@@ -111,15 +111,31 @@ def load_config(config_path: str = DEFAULT_CONFIG_PATH) -> dict:
     Load configuration from YAML file.
 
     Args:
-        config_path: Path to the configuration file
+        config_path: Path to the configuration file (relative to project root)
 
     Returns:
         Configuration dictionary, empty dict if file not found
     """
+    # Try relative path first
     config_file = Path(config_path)
     if config_file.exists():
         with open(config_file, "r", encoding="utf-8") as f:
             return yaml.safe_load(f) or {}
+
+    # Try relative to this file's parent (project root)
+    project_root = Path(__file__).parent.parent
+    config_file = project_root / config_path
+    if config_file.exists():
+        with open(config_file, "r", encoding="utf-8") as f:
+            return yaml.safe_load(f) or {}
+
+    # Try /mount/src/kidsbot for Streamlit Cloud
+    cloud_path = Path("/mount/src/kidsbot") / config_path
+    if cloud_path.exists():
+        with open(cloud_path, "r", encoding="utf-8") as f:
+            return yaml.safe_load(f) or {}
+
+    print(f"[Config] Warning: Config file not found at {config_path}")
     return {}
 
 
