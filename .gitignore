@@ -1,0 +1,92 @@
+# KidBot .gitignore
+
+# ===================
+# Sensitive Files
+# ===================
+config/config.yaml
+*.env
+.env*
+secrets.yaml
+**/api_key*
+
+# ===================
+# Python
+# ===================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv/
+
+# ===================
+# Data Files
+# ===================
+data/vector_store/*
+!data/vector_store/.gitkeep
+data/raw_docs/*
+!data/raw_docs/.gitkeep
+data/voice_prints/*
+!data/voice_prints/.gitkeep
+*.mp3
+*.wav
+temp_output.*
+
+# ===================
+# ML Models (cached by huggingface)
+# ===================
+saved_models/
+
+# ===================
+# IDE
+# ===================
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+.settings/
+
+# ===================
+# OS
+# ===================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ===================
+# Logs & Cache
+# ===================
+*.log
+.cache/
+.claude/
+*.sqlite3
+
+# ===================
+# Misc
+# ===================
+*.bak
+*.tmp
+*.temp

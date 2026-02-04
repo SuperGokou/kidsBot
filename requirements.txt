@@ -1,0 +1,38 @@
+# KidBot Dependencies
+# Child Companion Robot - Cross-platform compatible
+
+# LLM API (DeepSeek - OpenAI compatible)
+openai>=1.12.0
+
+# Vector Database
+chromadb>=0.4.22
+
+# Embeddings
+sentence-transformers>=2.3.0
+
+# Text-to-Speech
+edge-tts>=6.1.9
+
+# Audio Playback
+pygame>=2.5.0
+
+# Speech Recognition
+SpeechRecognition>=3.10.0
+pyaudio>=0.2.14
+
+# Configuration
+pyyaml>=6.0
+python-dotenv>=1.0.0
+
+# Utilities
+tqdm>=4.66.0
+
+# Speaker Verification
+resemblyzer>=0.1.4
+webrtcvad-wheels>=2.0.14
+numpy>=1.24.0
+torch>=2.0.0
+
+# Web Interface (st.audio_input requires 1.33+)
+streamlit>=1.33.0
+watchdog>=4.0.0

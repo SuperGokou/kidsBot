@@ -1,0 +1,34 @@
+# KidBot Configuration Example
+# Copy this file to config.yaml and fill in your API key
+
+# API Configuration
+api:
+  deepseek:
+    api_key: "your-deepseek-api-key-here"
+    base_url: "https://api.deepseek.com"
+    model: "deepseek-chat"
+
+# Paths
+paths:
+  raw_docs: "data/raw_docs"
+  vector_store: "data/vector_store"
+
+# Robot Personality
+robot:
+  name: "VV"
+  personality: "A 6-year-old curious and friendly robot who loves to learn and play. Speaks in simple, cheerful sentences that children can understand. Always positive and encouraging."
+
+# RAG Settings
+rag:
+  collection_name: "kidbot_knowledge"
+  embedding_model: "all-MiniLM-L6-v2"
+  chunk_size: 500
+  chunk_overlap: 50
+  batch_size: 100
+
+# Audio Settings
+audio:
+  tts_voice: "en-US-AnaNeural"
+  temp_audio_file: "temp_output.mp3"
+  listen_timeout: 5
+  phrase_timeout: 3
