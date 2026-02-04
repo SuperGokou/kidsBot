@@ -128,17 +128,26 @@ def load_config(config_path: str = DEFAULT_CONFIG_PATH) -> dict:
     ]
 
     # Also try finding config relative to /mount/src/*
-    mount_src = Path("/mount/src")
-    if mount_src.exists():
-        for subdir in mount_src.iterdir():
-            if subdir.is_dir():
-                paths_to_try.append(subdir / config_path)
+    try:
+        mount_src = Path("/mount/src")
+        if mount_src.exists():
+            for subdir in mount_src.iterdir():
+                try:
+                    if subdir.is_dir():
+                        paths_to_try.append(subdir / config_path)
+                except PermissionError:
+                    pass
+    except PermissionError:
+        pass
 
     for p in paths_to_try:
-        if p.exists():
-            print(f"[Config] Found config at: {p}")
-            with open(p, "r", encoding="utf-8") as f:
-                return yaml.safe_load(f) or {}
+        try:
+            if p.exists():
+                print(f"[Config] Found config at: {p}")
+                with open(p, "r", encoding="utf-8") as f:
+                    return yaml.safe_load(f) or {}
+        except PermissionError:
+            continue
 
     print(f"[Config] Warning: Config file not found. Tried: {[str(p) for p in paths_to_try]}")
     return {}
