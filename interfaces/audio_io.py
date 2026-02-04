@@ -416,12 +416,12 @@ class AudioManager:
             # Extended timeouts for continuous listening
             self.listen_timeout = 15  # Wait longer for speech to start
             self.phrase_time_limit = 15  # Allow longer sentences in continuous mode
-            self.recognizer.pause_threshold = 0.6  # Still fast but slightly longer for continuous
+            self.recognizer.pause_threshold = 1.5  # Give kids time to pause between words
         else:
             # Restore optimized defaults
             self.listen_timeout = 10
             self.phrase_time_limit = 10  # 10 seconds for normal mode
-            self.recognizer.pause_threshold = 0.5
+            self.recognizer.pause_threshold = 1.2
 
     def request_stop(self):
         """Request to stop listening/speaking."""
