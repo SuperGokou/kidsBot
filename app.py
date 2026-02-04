@@ -571,76 +571,58 @@ def render_jarvis_controls(config: dict):
     if is_active:
         bg_color = "#E74C3C"
         btn_text = "Stop"
-        animation = "pulse-red"
     else:
         bg_color = "#FF9F1C"
         btn_text = "Start"
-        animation = "pulse-orange"
 
-    # Inject CSS for the jarvis button with unique class targeting
+    # Render centered HTML button that triggers hidden Streamlit button
     st.markdown(f"""
     <style>
-    /* Jarvis button container - centers the button */
-    .jarvis-btn-wrapper {{
+    .jarvis-btn-container {{
         display: flex;
         justify-content: center;
         align-items: center;
         padding: 20px 0;
+        width: 100%;
     }}
-
-    /* Target button inside our wrapper using data attribute */
-    div[data-testid="stVerticalBlock"]:has(.jarvis-btn-marker) .stButton {{
-        display: flex;
-        justify-content: center;
+    .jarvis-btn {{
+        background: linear-gradient(145deg, {bg_color}, {bg_color}dd);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 80px;
+        height: 80px;
+        font-weight: bold;
+        font-size: 16px;
+        cursor: pointer;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.25);
+        transition: all 0.2s ease;
+        font-family: "Source Sans Pro", sans-serif;
     }}
-
-    div[data-testid="stVerticalBlock"]:has(.jarvis-btn-marker) .stButton button {{
-        background: linear-gradient(145deg, {bg_color}, {bg_color}dd) !important;
-        color: white !important;
-        border: none !important;
-        border-radius: 50% !important;
-        width: 80px !important;
-        height: 80px !important;
-        min-width: 80px !important;
-        min-height: 80px !important;
-        max-width: 80px !important;
-        padding: 0 !important;
-        font-weight: bold !important;
-        font-size: 16px !important;
-        box-shadow: 0 8px 25px rgba(0,0,0,0.25),
-                    inset 0 -3px 10px rgba(0,0,0,0.1),
-                    inset 0 3px 10px rgba(255,255,255,0.2) !important;
-        transition: all 0.2s ease !important;
-        animation: {animation} 2s infinite !important;
+    .jarvis-btn:hover {{
+        transform: scale(1.08);
+        box-shadow: 0 12px 35px rgba(0,0,0,0.35);
     }}
-
-    div[data-testid="stVerticalBlock"]:has(.jarvis-btn-marker) .stButton button:hover {{
-        transform: scale(1.08) !important;
-        box-shadow: 0 12px 35px rgba(0,0,0,0.35),
-                    inset 0 -3px 10px rgba(0,0,0,0.1),
-                    inset 0 3px 10px rgba(255,255,255,0.2) !important;
+    .jarvis-btn:active {{
+        transform: scale(0.95);
     }}
-
-    div[data-testid="stVerticalBlock"]:has(.jarvis-btn-marker) .stButton button:active {{
-        transform: scale(0.95) !important;
-    }}
-
-    @keyframes pulse-orange {{
-        0%, 100% {{ box-shadow: 0 8px 25px rgba(255,159,28,0.4); }}
-        50% {{ box-shadow: 0 8px 35px rgba(255,159,28,0.7); }}
-    }}
-
-    @keyframes pulse-red {{
-        0%, 100% {{ box-shadow: 0 8px 25px rgba(231,76,60,0.4); }}
-        50% {{ box-shadow: 0 8px 35px rgba(231,76,60,0.7); }}
+    /* Hide the actual Streamlit button */
+    .st-key-jarvis_toggle {{
+        position: absolute !important;
+        left: -9999px !important;
+        visibility: hidden !important;
     }}
     </style>
 
-    <!-- Marker div for CSS targeting -->
-    <div class="jarvis-btn-marker" style="height: 0; overflow: hidden;"></div>
+    <div class="jarvis-btn-container">
+        <button class="jarvis-btn" onclick="
+            var btn = window.parent.document.querySelector('.st-key-jarvis_toggle button');
+            if (btn) btn.click();
+        ">{btn_text}</button>
+    </div>
     """, unsafe_allow_html=True)
 
-    # Place the button - it will be centered by the CSS above
+    # Hidden Streamlit button for state management
     if is_active:
         st.button(btn_text, key="jarvis_toggle", on_click=stop_listening_callback)
     else:
