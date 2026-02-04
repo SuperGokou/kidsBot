@@ -88,9 +88,14 @@ class AudioManager:
         self.recognizer.phrase_threshold = 0.3  # Minimum seconds to consider as speech
         self.recognizer.non_speaking_duration = DEFAULT_NON_SPEAKING_DURATION
 
-        # Initialize pygame mixer for audio playback
-        if not pygame.mixer.get_init():
-            pygame.mixer.init()
+        # Initialize pygame mixer for audio playback (may fail on cloud)
+        self._audio_playback_available = False
+        try:
+            if not pygame.mixer.get_init():
+                pygame.mixer.init()
+            self._audio_playback_available = True
+        except Exception as e:
+            print(f"[Audio] pygame mixer init failed (cloud environment?): {e}")
 
         # Ensure temp directory exists
         self.temp_dir = Path(tempfile.gettempdir())
@@ -263,6 +268,11 @@ class AudioManager:
             text: The text to speak
         """
         if not text.strip():
+            return
+
+        # Skip if audio playback not available (cloud environment)
+        if not self._audio_playback_available:
+            print(f"[Audio] Playback unavailable, skipping: {text[:50]}...")
             return
 
         # Use unique filename to avoid permission issues
