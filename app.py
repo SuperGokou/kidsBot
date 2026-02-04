@@ -98,6 +98,10 @@ def init_session_state():
     if "pending_mode_greeting" not in st.session_state:
         st.session_state.pending_mode_greeting = None
 
+    # Track if system microphone is available (PyAudio required)
+    if "microphone_available" not in st.session_state:
+        st.session_state.microphone_available = None  # Will be checked on first use
+
 
 # =============================================================================
 # Cached Resource Loaders
@@ -303,23 +307,23 @@ def render_sidebar():
         """, unsafe_allow_html=True)
 
         # Home (Chat mode) - uses callback for mode switching
-        st.button("Home", key="nav_home", use_container_width=True,
+        st.button("Home", key="nav_home",
                   on_click=on_mode_switch, args=("chat",))
 
         # Stories mode - uses callback for mode switching
-        st.button("Stories", key="nav_stories", use_container_width=True,
+        st.button("Story", key="nav_stories",
                   on_click=on_mode_switch, args=("story",))
 
         # Learning mode - uses callback for mode switching
-        st.button("Learn", key="nav_learn", use_container_width=True,
+        st.button("Learn", key="nav_learn",
                   on_click=on_mode_switch, args=("learning",))
 
         # Games mode - uses callback for mode switching
-        st.button("Games", key="nav_games", use_container_width=True,
+        st.button("Game", key="nav_games",
                   on_click=on_mode_switch, args=("game",))
 
         # Settings - doesn't use Jarvis mode, keep simple click behavior
-        if st.button("Settings", key="nav_settings", use_container_width=True):
+        if st.button("Settings", key="nav_settings"):
             st.session_state.current_view = "settings"
             st.rerun()
 
@@ -456,103 +460,252 @@ def on_mode_switch(new_mode: str):
     st.session_state.pending_mode_greeting = new_mode
 
 
+def _process_browser_audio(audio_file, config: dict):
+    """
+    Process audio captured from browser's st.audio_input.
+
+    Used when PyAudio is not available (e.g., Streamlit Cloud).
+    """
+    import tempfile
+
+    robot_name = config.get("robot", {}).get("name", "Bobo")
+
+    with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
+        tmp_path = tmp.name
+
+    try:
+        # Save the browser audio
+        if not save_audio_to_wav(audio_file, tmp_path):
+            st.error("Could not process audio")
+            return
+
+        with st.status("Processing...", expanded=True) as status:
+            # Verify voice
+            status.update(label="Checking voice...", state="running")
+            if not verify_voice(tmp_path):
+                status.update(label="Voice not recognized", state="error")
+                st.warning("I don't recognize that voice. Please try again!")
+                return
+
+            # Transcribe
+            status.update(label="Listening...", state="running")
+            text = transcribe_audio(tmp_path)
+
+            if not text:
+                status.update(label="Couldn't hear", state="error")
+                st.warning("I couldn't hear you. Please try again!")
+                return
+
+            # Get response
+            status.update(label="Thinking...", state="running")
+
+            # Add user message
+            st.session_state.messages.append({
+                "role": "user",
+                "content": text
+            })
+
+            response = get_bot_response(text)
+
+            # Add bot response
+            st.session_state.messages.append({
+                "role": "assistant",
+                "content": response
+            })
+
+            status.update(label="Done!", state="complete")
+
+            # Play TTS
+            if st.session_state.get("tts_enabled", True):
+                audio_bytes = text_to_speech(response)
+                if audio_bytes:
+                    st.audio(audio_bytes, format="audio/mp3", autoplay=True)
+
+            st.rerun()
+
+    finally:
+        safe_remove_file(tmp_path)
+
+
 def render_jarvis_controls(config: dict):
     """
-    Render Jarvis mode circular toggle button.
+    Render Jarvis mode start/stop button.
 
     Args:
         config: Configuration dictionary
 
-    Displays a circular mic button that toggles conversation mode.
-    Green when inactive (tap to start), red when active (tap to stop).
+    Displays a large, centered mic button to start or stop conversation mode.
+    Visual hierarchy: Robot Avatar -> Robot Name -> Mic Button -> "Tap to talk"
     """
+    # Check microphone availability on first render
+    if st.session_state.microphone_available is None:
+        audio_manager = get_audio_manager(config)
+        st.session_state.microphone_available = audio_manager.is_microphone_available()
+
+    # If microphone not available, show browser audio input instead
+    if not st.session_state.microphone_available:
+        st.markdown("""
+        <div style="text-align: center; padding: 20px;">
+            <p style="color: #8B7355; font-size: 14px; margin-bottom: 15px;">
+                Use the microphone button below to record your voice
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # Center the browser audio input
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            audio_file = st.audio_input("Record", key="browser_audio", label_visibility="collapsed")
+            if audio_file:
+                # Process browser audio
+                _process_browser_audio(audio_file, config)
+        return
+
     is_active = st.session_state.is_listening_active
 
-    # CSS for circular toggle button
-    if is_active:
-        # Active state - red pulsing button
-        button_css = """
-        <style>
-        .circle-btn-container .stButton > button {
-            width: 100px !important;
-            height: 100px !important;
-            border-radius: 50% !important;
-            background: linear-gradient(135deg, #E74C3C, #C0392B) !important;
-            color: white !important;
-            border: none !important;
-            font-size: 14px !important;
-            font-weight: 600 !important;
-            padding: 0 !important;
-            box-shadow: 0 8px 25px rgba(231, 76, 60, 0.4) !important;
-            animation: pulse-red 1.5s ease-in-out infinite !important;
-        }
-        .circle-btn-container .stButton > button:hover {
-            transform: scale(1.05) !important;
-            box-shadow: 0 12px 35px rgba(231, 76, 60, 0.5) !important;
-        }
-        @keyframes pulse-red {
-            0%, 100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7); }
-            50% { box-shadow: 0 0 0 15px rgba(231, 76, 60, 0); }
-        }
-        </style>
-        """
-        button_label = "Stop"
-        status_text = "Tap to stop"
-    else:
-        # Inactive state - green button
-        button_css = """
-        <style>
-        .circle-btn-container .stButton > button {
-            width: 100px !important;
-            height: 100px !important;
-            border-radius: 50% !important;
-            background: linear-gradient(135deg, #2ECC71, #27AE60) !important;
-            color: white !important;
-            border: none !important;
-            font-size: 14px !important;
-            font-weight: 600 !important;
-            padding: 0 !important;
-            box-shadow: 0 8px 25px rgba(46, 204, 113, 0.4) !important;
-        }
-        .circle-btn-container .stButton > button:hover {
-            transform: scale(1.05) !important;
-            box-shadow: 0 12px 35px rgba(46, 204, 113, 0.5) !important;
-        }
-        </style>
-        """
-        button_label = "Start"
-        status_text = "Tap to start"
+    # CSS for the Big Orange Mic button with SVG icon
+    # Microphone SVG as data URL (white stroke)
+    mic_svg = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='48' height='48' stroke='white' stroke-width='2' fill='none'%3E%3Cpath d='M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z'/%3E%3Cpath d='M19 10v2a7 7 0 0 1-14 0v-2'/%3E%3Cline x1='12' y1='19' x2='12' y2='23'/%3E%3Cline x1='8' y1='23' x2='16' y2='23'/%3E%3C/svg%3E"
+    # Stop icon SVG as data URL (white square)
+    stop_svg = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='36' height='36' fill='white'%3E%3Crect x='6' y='6' width='12' height='12' rx='2'/%3E%3C/svg%3E"
 
+    button_css = f"""
+    <style>
+    /* Big Orange Mic Button - Start State */
+    .mic-button-wrapper .stButton > button {{
+        width: 100px !important;
+        height: 100px !important;
+        border-radius: 50% !important;
+        border: none !important;
+        background: linear-gradient(145deg, #FFD166, #FF9F1C) !important;
+        box-shadow:
+            0 8px 25px rgba(255, 159, 28, 0.45),
+            0 4px 10px rgba(255, 159, 28, 0.3),
+            inset 0 2px 4px rgba(255, 255, 255, 0.3) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 0 !important;
+        min-height: 100px !important;
+        cursor: pointer !important;
+        animation: mic-pulse 2.5s ease-in-out infinite !important;
+        transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+        background-image: url("{mic_svg}") !important;
+        background-repeat: no-repeat !important;
+        background-position: center !important;
+        background-size: 48px 48px !important;
+    }}
+
+    /* Hide the default button text/icon */
+    .mic-button-wrapper .stButton > button p,
+    .mic-button-wrapper .stButton > button span {{
+        display: none !important;
+    }}
+
+    /* Pulsing animation for Start button */
+    @keyframes mic-pulse {{
+        0%, 100% {{
+            transform: scale(1);
+            box-shadow:
+                0 8px 25px rgba(255, 159, 28, 0.45),
+                0 4px 10px rgba(255, 159, 28, 0.3),
+                inset 0 2px 4px rgba(255, 255, 255, 0.3);
+        }}
+        50% {{
+            transform: scale(1.05);
+            box-shadow:
+                0 12px 35px rgba(255, 159, 28, 0.55),
+                0 6px 15px rgba(255, 159, 28, 0.4),
+                inset 0 2px 4px rgba(255, 255, 255, 0.3);
+        }}
+    }}
+
+    .mic-button-wrapper .stButton > button:hover {{
+        animation: none !important;
+        transform: scale(1.1) !important;
+        box-shadow:
+            0 14px 40px rgba(255, 159, 28, 0.6),
+            0 8px 20px rgba(255, 159, 28, 0.4),
+            inset 0 2px 4px rgba(255, 255, 255, 0.3) !important;
+    }}
+
+    .mic-button-wrapper .stButton > button:active {{
+        animation: none !important;
+        transform: scale(0.95) !important;
+    }}
+
+    /* Stop Button - Red pulsing with stop icon */
+    .mic-button-wrapper.stop-state .stButton > button {{
+        background: linear-gradient(145deg, #FF6B6B, #E74C3C) !important;
+        background-image: url("{stop_svg}") !important;
+        background-repeat: no-repeat !important;
+        background-position: center !important;
+        background-size: 36px 36px !important;
+        box-shadow:
+            0 0 0 0 rgba(231, 76, 60, 0.7),
+            0 8px 25px rgba(231, 76, 60, 0.5),
+            inset 0 2px 4px rgba(255, 255, 255, 0.2) !important;
+        animation: stop-pulse 1.5s ease-in-out infinite !important;
+    }}
+
+    @keyframes stop-pulse {{
+        0%, 100% {{
+            box-shadow:
+                0 0 0 0 rgba(231, 76, 60, 0.7),
+                0 8px 25px rgba(231, 76, 60, 0.5),
+                inset 0 2px 4px rgba(255, 255, 255, 0.2);
+        }}
+        50% {{
+            box-shadow:
+                0 0 0 15px rgba(231, 76, 60, 0),
+                0 8px 25px rgba(231, 76, 60, 0.5),
+                inset 0 2px 4px rgba(255, 255, 255, 0.2);
+        }}
+    }}
+
+    .mic-button-wrapper.stop-state .stButton > button:hover {{
+        animation: none !important;
+        transform: scale(1.1) !important;
+    }}
+
+    /* Tap to talk label */
+    .mic-label {{
+        text-align: center;
+        color: #8B7355;
+        font-size: 14px;
+        font-weight: 500;
+        margin-top: 12px;
+        font-family: 'Nunito', sans-serif;
+    }}
+    </style>
+    """
     st.markdown(button_css, unsafe_allow_html=True)
 
-    # Center the button
-    col1, col2, col3 = st.columns([1, 1, 1])
+    # Center the button using columns [1, 2, 1] for perfect centering
+    col1, col2, col3 = st.columns([1, 2, 1])
+
     with col2:
-        st.markdown('<div class="circle-btn-container">', unsafe_allow_html=True)
+        # Wrapper div for targeting CSS
+        wrapper_class = "mic-button-wrapper stop-state" if is_active else "mic-button-wrapper"
+        st.markdown(f'<div class="{wrapper_class}">', unsafe_allow_html=True)
 
         if is_active:
-            st.button(button_label, key="jarvis_toggle", on_click=stop_listening_callback)
+            # Stop button with stop icon
+            if st.button("", key="jarvis_toggle", on_click=stop_listening_callback, help="Stop listening"):
+                pass
+            st.markdown('<div class="mic-label">Tap to stop</div>', unsafe_allow_html=True)
         else:
-            if st.button(button_label, key="jarvis_toggle"):
+            # Start button with microphone emoji
+            if st.button("", key="jarvis_toggle", help="Start talking"):
                 st.session_state.is_listening_active = True
                 st.session_state.jarvis_active = True
                 st.session_state.jarvis_phase = "greeting"
                 st.session_state.jarvis_error = ""
                 st.session_state.jarvis_greeting = True
                 st.rerun()
+            st.markdown('<div class="mic-label">Tap to talk</div>', unsafe_allow_html=True)
 
         st.markdown('</div>', unsafe_allow_html=True)
-
-        # Status text below button
-        st.markdown(f"""
-        <div style="
-            text-align: center;
-            margin-top: 10px;
-            font-family: 'Nunito', sans-serif;
-            font-size: 14px;
-            color: #8B7355;
-        ">{status_text}</div>
-        """, unsafe_allow_html=True)
 
 
 def handle_jarvis_stop(config: dict):
@@ -756,13 +909,14 @@ def chat_view(config: dict):
             "content": greeting
         })
 
-        # Speak the greeting (blocking)
+        # Speak the greeting (blocking) - works even without microphone
         audio_manager.speak(greeting)
 
-        # Auto-start Jarvis loop
-        st.session_state.is_listening_active = True
-        st.session_state.jarvis_active = True
-        st.session_state.jarvis_phase = "listening"
+        # Auto-start Jarvis loop only if microphone is available
+        if audio_manager.is_microphone_available():
+            st.session_state.is_listening_active = True
+            st.session_state.jarvis_active = True
+            st.session_state.jarvis_phase = "listening"
         st.rerun()
 
     # Render UI shell
@@ -785,6 +939,15 @@ def chat_view(config: dict):
     if st.session_state.is_listening_active:
         # Get AudioManager for system microphone access
         audio_manager = get_audio_manager(config)
+
+        # Check if microphone is available (PyAudio required)
+        if not audio_manager.is_microphone_available():
+            st.warning("Microphone not available. Use the browser audio input instead.")
+            st.session_state.is_listening_active = False
+            st.session_state.jarvis_active = False
+            st.session_state.jarvis_phase = "idle"
+            st.rerun()
+
         audio_manager.clear_stop_request()
 
         phase = st.session_state.jarvis_phase

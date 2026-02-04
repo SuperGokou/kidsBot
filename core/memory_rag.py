@@ -9,6 +9,7 @@ Uses Streamlit caching for performance optimization.
 import hashlib
 import json
 import os
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Generator, Optional
 
@@ -434,7 +435,8 @@ class MemoryManager:
 
             metadata.update({
                 "source": "conversation",
-                "type": "learned_fact"
+                "type": "learned_fact",
+                "timestamp": datetime.now().isoformat()
             })
 
             # Generate embedding and add to collection
@@ -478,6 +480,41 @@ class MemoryManager:
         except Exception as e:
             print(f"[Memory] Error clearing memories: {e}")
             return False
+
+    def get_recent_memories(self, hours: int = 24) -> list[str]:
+        """
+        Retrieve learned memories from the last N hours.
+
+        Args:
+            hours: Number of hours to look back (default 24)
+
+        Returns:
+            List of memory texts from the specified time period
+        """
+        cutoff_time = (datetime.now() - timedelta(hours=hours)).isoformat()
+
+        try:
+            # Get all learned facts
+            results = self.collection.get(
+                where={"type": "learned_fact"},
+                include=["documents", "metadatas"]
+            )
+
+            if not results or not results["documents"]:
+                return []
+
+            # Filter by timestamp
+            recent = []
+            for doc, meta in zip(results["documents"], results["metadatas"]):
+                ts = meta.get("timestamp", "")
+                if ts >= cutoff_time:
+                    recent.append(doc)
+
+            return recent
+
+        except Exception as e:
+            print(f"[Memory] Error getting recent memories: {e}")
+            return []
 
     def get_stats(self) -> dict:
         """Get statistics about the knowledge base."""

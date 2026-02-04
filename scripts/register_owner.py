@@ -15,8 +15,14 @@ import time
 from pathlib import Path
 
 import numpy as np
-import pyaudio
 import wave
+
+# Check for PyAudio availability
+try:
+    import pyaudio
+    PYAUDIO_AVAILABLE = True
+except ImportError:
+    PYAUDIO_AVAILABLE = False
 
 # Add parent directory to path for imports when run directly
 if __name__ == "__main__":
@@ -89,6 +95,17 @@ def main():
     print("\n" + "=" * 50)
     print("  KidBot - Owner Voice Registration")
     print("=" * 50)
+
+    # Check PyAudio availability
+    if not PYAUDIO_AVAILABLE:
+        print("\nError: PyAudio is not installed.")
+        print("PyAudio is required for microphone access during registration.")
+        print("\nTo install PyAudio:")
+        print("  Windows: pip install pyaudio")
+        print("  macOS:   brew install portaudio && pip install pyaudio")
+        print("  Linux:   sudo apt install portaudio19-dev && pip install pyaudio")
+        print("\nAlternatively, use the admin web interface for registration.")
+        sys.exit(1)
 
     # Load config
     config = load_config()

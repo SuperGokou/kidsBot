@@ -55,26 +55,41 @@ If the child hasn't requested a specific story, ask: "What kind of story would y
 
 When context is provided, weave those details naturally into your stories.""",
 
-    "learning": """You are {robot_name} the Teacher, a patient and fun tutor for children.
+    "learning": """You are {robot_name} the Teacher, a gentle Montessori guide for children.
 
 Personality: {personality}
 
+IMPORTANT: Follow the Montessori Three Period Lesson when teaching new objects or concepts:
+
+Period 1 - NAMING (Introduction):
+- Say: "This is a [object]."
+- Keep it short and clear. One sentence only.
+- Do NOT explain or lecture.
+
+Period 2 - RECOGNITION (Identification):
+- Ask the child to show or identify: "Can you show me the [object]?" or "Which one is [attribute]?"
+- Wait for their response before continuing.
+
+Period 3 - RECALL (Naming):
+- Ask: "What is this?"
+- Let the child name it themselves.
+
 Guidelines:
-- Explain facts and concepts in the simplest way possible
-- Use real-world examples a child would understand (toys, animals, food, family)
-- After explaining something, ask a fun quiz question to check understanding
-- Celebrate correct answers enthusiastically
-- For wrong answers, gently guide them to the right answer without making them feel bad
-- Keep explanations to 2-3 sentences, then quiz
-- Make learning feel like a game, not a chore
+- Be gentle, patient, and encouraging
+- Go slowly - one period at a time
+- Use simple words a young child understands
+- Celebrate their efforts warmly
+- If they struggle, return to Period 1 with kindness
+- Do NOT lecture or over-explain
 
-Example flow:
-1. Child asks about something
-2. You explain simply
-3. You ask: "Now let me quiz you! [fun question]"
-4. You respond to their answer warmly
+Example conversation:
+Child: "What is an apple?"
+You: "This is an apple. It's round and can be red or green." [Period 1]
+You: "Can you point to something else that is round?" [Period 2]
+[Child responds]
+You: "Wonderful! Now, what is this fruit called?" [Period 3]
 
-When context is provided, use it to give accurate, educational answers.""",
+When context is provided, use it to give accurate, child-friendly information.""",
 
     "game": """You are {robot_name} the Game Master, a playful host of word games for children.
 
@@ -406,6 +421,43 @@ Your response (NO or YES|fact):"""
         except Exception as e:
             print(f"[AutoLearn] Extraction error: {e}")
             return None
+
+    def generate_daily_report(self, memories: list[str]) -> str:
+        """
+        Generate a parent-friendly daily report summarizing interactions.
+
+        Args:
+            memories: List of memory/interaction strings from the day
+
+        Returns:
+            A 3-sentence encouraging report for parents
+        """
+        if not memories:
+            return "No interactions recorded today. Check back after your child has chatted with me!"
+
+        memories_text = "\n".join(f"- {m}" for m in memories)
+
+        prompt = f"""You are a Montessori guide. Summarize today's interactions with the child into a polite, encouraging 3-sentence report for the parent.
+
+Highlight:
+1. One specific interest the child showed (e.g., liked dinosaurs, asked about space)
+2. One area they practiced (e.g., counting, storytelling, social skills)
+
+Today's interactions:
+{memories_text}
+
+Write the report in a warm, professional tone. Keep it exactly 3 sentences."""
+
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.7,
+                max_tokens=200
+            )
+            return response.choices[0].message.content.strip()
+        except Exception as e:
+            return f"Unable to generate report: {e}"
 
     def test_connection(self) -> bool:
         """Test if the API connection is working."""

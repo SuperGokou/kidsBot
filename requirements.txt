@@ -18,7 +18,9 @@ pygame>=2.5.0
 
 # Speech Recognition
 SpeechRecognition>=3.10.0
-pyaudio>=0.2.14
+# PyAudio is optional - required for system microphone access (Jarvis mode)
+# On Streamlit Cloud, use st.audio_input() for browser-based audio instead
+# pyaudio>=0.2.14  # Uncomment for local development with microphone
 
 # Configuration
 pyyaml>=6.0

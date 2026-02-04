@@ -8,6 +8,7 @@ Run with: streamlit run admin.py
 
 import os
 import tempfile
+from datetime import datetime
 from pathlib import Path
 
 import streamlit as st
@@ -272,6 +273,51 @@ def main():
 
     except Exception as e:
         st.info(f"Memory database not initialized: {e}")
+
+    # Parent Reports Section
+    st.divider()
+    st.header("Parent Reports")
+
+    if st.button("Generate Today's Report", type="primary"):
+        with st.spinner("Analyzing today's interactions..."):
+            try:
+                from core.memory_rag import MemoryManager
+                from core.llm_client import DeepSeekClient
+
+                mm = MemoryManager(config)
+                recent_memories = mm.get_recent_memories(hours=24)
+
+                llm = DeepSeekClient(config)
+                report = llm.generate_daily_report(recent_memories)
+
+                # Display report in a styled card
+                st.markdown(
+                    f"""
+                    <div style="
+                        background-color: #f0f7ff;
+                        border-left: 4px solid #1f77b4;
+                        padding: 1rem;
+                        border-radius: 0.5rem;
+                        margin: 1rem 0;
+                    ">
+                        <h4 style="margin-top: 0; color: #1f77b4;">Daily Report</h4>
+                        <p style="color: #333; line-height: 1.6;">{report}</p>
+                        <small style="color: #666;">Generated: {datetime.now().strftime('%Y-%m-%d %H:%M')}</small>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+
+                # Store in session state for copy functionality
+                st.session_state.last_report = report
+
+            except Exception as e:
+                st.error(f"Failed to generate report: {e}")
+
+    # Show copy button if report exists
+    if st.session_state.get("last_report"):
+        st.code(st.session_state.last_report, language=None)
+        st.caption("Copy the text above to share with parents")
 
     # Configuration Info
     st.divider()

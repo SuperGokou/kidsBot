@@ -24,7 +24,7 @@ HTML_HEADER = """
 <div class="main-header">
     <div class="status-card">
         <div class="status-dot"></div>
-        <span class="status-text">Friendship Status: Connected</span>
+        <span class="status-text">Best Friends</span>
     </div>
     <div class="user-avatar">
         <svg viewBox="0 0 24 24">

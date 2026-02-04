@@ -3,6 +3,10 @@ Audio Input/Output Manager for KidBot
 
 Handles speech recognition (STT) and text-to-speech (TTS)
 for natural voice interaction with VAD-based auto-stop recording.
+
+Note: Microphone features require PyAudio. On platforms where PyAudio
+is not available (e.g., Streamlit Cloud), microphone features are disabled
+but TTS playback still works. Use st.audio_input() for browser-based audio.
 """
 
 import asyncio
@@ -25,6 +29,15 @@ from core.utils import (
     DEFAULT_NON_SPEAKING_DURATION,
 )
 
+# Check if PyAudio is available (required for microphone access)
+PYAUDIO_AVAILABLE = False
+try:
+    import pyaudio
+    PYAUDIO_AVAILABLE = True
+except ImportError:
+    print("[AudioManager] PyAudio not available - microphone features disabled")
+    print("[AudioManager] Use st.audio_input() for browser-based audio capture")
+
 
 class AudioManager:
     """Manages audio input (microphone) and output (speaker) with VAD support."""
@@ -39,6 +52,9 @@ class AudioManager:
         """
         self.config = config
         audio_config = config.get("audio", {})
+
+        # Track if microphone is available
+        self._microphone_available = PYAUDIO_AVAILABLE
 
         # TTS settings
         self.tts_voice = audio_config.get("tts_voice", DEFAULT_TTS_VOICE)
@@ -79,9 +95,13 @@ class AudioManager:
         # Ensure temp directory exists
         self.temp_dir = Path(tempfile.gettempdir())
 
-        # Auto-calibrate microphone on startup
-        if auto_calibrate:
+        # Auto-calibrate microphone on startup (only if PyAudio available)
+        if auto_calibrate and self._microphone_available:
             self.calibrate_noise()
+
+    def is_microphone_available(self) -> bool:
+        """Check if microphone features are available (PyAudio installed)."""
+        return self._microphone_available
 
     def calibrate_noise(self, duration: float = 2.0) -> bool:
         """
@@ -96,6 +116,10 @@ class AudioManager:
         Returns:
             True if calibration succeeded, False otherwise
         """
+        if not self._microphone_available:
+            print("[Mic] Calibration skipped - PyAudio not available")
+            return False
+
         print(f"[Mic] Calibrating background noise... Please stay silent for {duration} seconds.")
 
         try:
@@ -110,6 +134,7 @@ class AudioManager:
 
         except OSError as e:
             print(f"[Mic] Calibration failed - microphone error: {e}")
+            self._microphone_available = False
             return False
         except Exception as e:
             print(f"[Mic] Calibration failed: {e}")
@@ -159,6 +184,10 @@ class AudioManager:
         Returns:
             Tuple of (recognized text, audio file path or None)
         """
+        if not self._microphone_available:
+            print("[AudioManager] Microphone not available - use st.audio_input() instead")
+            return "", None
+
         if self._stop_requested:
             return "", None
 
@@ -322,12 +351,17 @@ class AudioManager:
 
     def test_microphone(self) -> bool:
         """Test if the microphone is working."""
+        if not self._microphone_available:
+            print("[AudioManager] Microphone test skipped - PyAudio not available")
+            return False
+
         try:
             with sr.Microphone() as source:
                 self.recognizer.adjust_for_ambient_noise(source, duration=0.5)
                 return True
         except Exception as e:
             print(f"[AudioManager] Microphone test failed: {e}")
+            self._microphone_available = False
             return False
 
     def test_speaker(self) -> bool:

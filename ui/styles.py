@@ -21,7 +21,15 @@ CSS_VARIABLES = """
     --shadow-dark: rgba(0,0,0,0.1);
     --sidebar-width: 90px;
     --header-height: 70px;
-    --font-family: 'Nunito', 'Quicksand', 'Comic Sans MS', sans-serif;
+    --font-family: 'Nunito', 'Fredoka One', 'Quicksand', sans-serif;
+
+    /* Soft Claymorphism variables */
+    --capsule-bg: rgba(255, 255, 255, 0.85);
+    --capsule-radius: 20px;
+    --capsule-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    --hover-orange: #FFAF45;
+    --mic-gradient: linear-gradient(145deg, #FFD166, #FF9F1C);
+    --mic-shadow: 0 10px 20px rgba(255, 159, 28, 0.4);
 }
 """
 
@@ -102,47 +110,51 @@ CSS_SIDEBAR = """
 
 /* Button container - center and add spacing */
 [data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
-    gap: 10px !important;
+    gap: 12px !important;
     padding: 0 16px !important;
     display: flex !important;
     flex-direction: column !important;
-    align-items: center !important;
+    align-items: flex-start !important;
     width: 100% !important;
 }
 
-/* Jelly button - Default state (cream/white with soft shadow) */
+/* Floating capsule button - Default state (glassmorphism) */
 [data-testid="stSidebar"] .stButton {
     display: flex !important;
-    justify-content: center !important;
-    width: 100% !important;
+    justify-content: flex-start !important;
+    width: auto !important;
 }
 
 [data-testid="stSidebar"] .stButton > button {
-    width: 130px !important;
-    border-radius: 15px !important;
-    background: #FFF8E1 !important;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important;
+    width: auto !important;
+    min-width: 140px !important;
+    border-radius: 20px !important;
+    background: rgba(255, 255, 255, 0.85) !important;
+    backdrop-filter: blur(10px) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
     border: none !important;
-    padding: 10px 18px !important;
+    padding: 10px 20px !important;
     font-weight: 600 !important;
     font-size: 14px !important;
     color: #5D4E37 !important;
     cursor: pointer;
-    transition: all 0.2s ease !important;
+    transition: all 0.25s ease !important;
+    margin-left: 8px !important;
 }
 
-/* Jelly button - Hover state (orange background, white text, pop effect) */
+/* Floating capsule button - Hover state (slide right + orange) */
 [data-testid="stSidebar"] .stButton > button:hover {
     background: #FFAF45 !important;
     color: white !important;
-    transform: scale(1.02) !important;
-    box-shadow: 0 6px 12px rgba(255,175,69,0.3) !important;
+    transform: translateX(8px) !important;
+    box-shadow: 0 6px 16px rgba(255, 175, 69, 0.35) !important;
 }
 
-/* Jelly button - Active/pressed state */
+/* Floating capsule button - Active/pressed state */
 [data-testid="stSidebar"] .stButton > button:active {
-    transform: scale(0.98) !important;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+    transform: translateX(8px) scale(0.98) !important;
+    box-shadow: 0 3px 8px rgba(255, 175, 69, 0.25) !important;
 }
 
 /* Active page button styling (when using session state) */
@@ -150,7 +162,7 @@ CSS_SIDEBAR = """
 [data-testid="stSidebar"] .active-nav-btn > button {
     background: #FFAF45 !important;
     color: white !important;
-    box-shadow: 0 4px 8px rgba(255,175,69,0.25) !important;
+    box-shadow: 0 4px 12px rgba(255, 175, 69, 0.3) !important;
 }
 
 /* Sidebar section headers */
@@ -190,22 +202,19 @@ CSS_HEADER = """
 .status-card {
     display: flex;
     align-items: center;
-    gap: 12px;
-    background: rgba(255,255,255,0.6);
-    backdrop-filter: blur(10px);
-    padding: 10px 20px;
-    border-radius: 25px;
-    box-shadow:
-        4px 4px 10px rgba(0,0,0,0.05),
-        -2px -2px 8px rgba(255,255,255,0.8);
+    gap: 8px;
+    background: #ffffff;
+    padding: 8px 18px;
+    border-radius: 50px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 .status-dot {
-    width: 12px;
-    height: 12px;
+    width: 10px;
+    height: 10px;
     background: var(--green-status);
     border-radius: 50%;
-    box-shadow: 0 0 8px rgba(76,175,80,0.5);
+    box-shadow: 0 0 6px rgba(76,175,80,0.5);
     animation: pulse 2s infinite;
 }
 
@@ -216,9 +225,9 @@ CSS_HEADER = """
 
 .status-text {
     font-family: var(--font-family);
-    font-size: 14px;
+    font-size: 13px;
     color: var(--text-brown);
-    font-weight: 600;
+    font-weight: 700;
 }
 
 .user-avatar {
@@ -625,7 +634,7 @@ header {visibility: hidden !important;}
 }
 
 /* Font import */
-@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Fredoka+One&display=swap');
 
 /* General text styling */
 html, body, [class*="css"] {
