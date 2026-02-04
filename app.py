@@ -566,37 +566,44 @@ def render_jarvis_controls(config: dict):
         return
 
     is_active = st.session_state.is_listening_active
+    btn_text = "Stop" if is_active else "Start"
+    bg_color = "#E74C3C" if is_active else "#FF9F1C"
 
-    # Colors and text based on state
-    if is_active:
-        btn_type = "primary"
-        btn_text = "Stop"
-    else:
-        btn_type = "secondary"
-        btn_text = "Start"
-
-    # Style the button container
-    st.markdown("""
+    # Style only this specific button using key-based selector
+    st.markdown(f"""
     <style>
-    .stButton > button {
+    div[data-testid="stVerticalBlock"] div[data-testid="column"]:nth-child(2) .stButton > button {{
         border-radius: 50% !important;
         width: 80px !important;
         height: 80px !important;
+        min-width: 80px !important;
+        min-height: 80px !important;
+        padding: 0 !important;
         font-weight: bold !important;
         font-size: 16px !important;
-    }
+        background: linear-gradient(145deg, {bg_color}, {bg_color}dd) !important;
+        border: none !important;
+        color: white !important;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.25) !important;
+        margin: 0 auto !important;
+        display: block !important;
+    }}
+    div[data-testid="stVerticalBlock"] div[data-testid="column"]:nth-child(2) .stButton {{
+        display: flex !important;
+        justify-content: center !important;
+    }}
     </style>
     """, unsafe_allow_html=True)
 
-    # Center the button
+    # Center the button using columns
     col1, col2, col3 = st.columns([1, 1, 1])
     with col2:
         if is_active:
-            if st.button(btn_text, key="jarvis_toggle", type="primary", use_container_width=True):
+            if st.button(btn_text, key="jarvis_toggle"):
                 stop_listening_callback()
                 st.rerun()
         else:
-            if st.button(btn_text, key="jarvis_toggle", type="secondary", use_container_width=True):
+            if st.button(btn_text, key="jarvis_toggle"):
                 st.session_state.is_listening_active = True
                 st.session_state.jarvis_active = True
                 st.session_state.jarvis_phase = "greeting"
