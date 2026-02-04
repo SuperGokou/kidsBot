@@ -116,16 +116,21 @@ def load_config(config_path: str = DEFAULT_CONFIG_PATH) -> dict:
     Returns:
         Configuration dictionary, empty dict if file not found
     """
-    paths_to_try = [
-        # 1. Relative path from cwd
-        Path(config_path),
-        # 2. Relative to this file's location (core/utils.py -> project root)
-        Path(__file__).resolve().parent.parent / config_path,
-        # 3. Streamlit Cloud paths (various possible mount points)
-        Path("/mount/src/kidsbot") / config_path,
-        Path("/mount/src/kidsBot") / config_path,
-        Path("/app") / config_path,
-    ]
+    # Also try .example version as fallback (for cloud deployments)
+    config_files = [config_path, config_path + ".example"]
+
+    paths_to_try = []
+    for cfg_file in config_files:
+        paths_to_try.extend([
+            # 1. Relative path from cwd
+            Path(cfg_file),
+            # 2. Relative to this file's location (core/utils.py -> project root)
+            Path(__file__).resolve().parent.parent / cfg_file,
+            # 3. Streamlit Cloud paths (various possible mount points)
+            Path("/mount/src/kidsbot") / cfg_file,
+            Path("/mount/src/kidsBot") / cfg_file,
+            Path("/app") / cfg_file,
+        ])
 
     # Also try finding config relative to /mount/src/*
     try:
