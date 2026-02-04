@@ -31,7 +31,7 @@ def is_demo_mode() -> bool:
 
     Demo mode is enabled when:
     - DEMO_MODE environment variable is set to "true" or "1"
-    - Or running on Streamlit Cloud (STREAMLIT_SHARING_MODE is set)
+    - Or running on Streamlit Cloud (detected via various environment indicators)
 
     Returns:
         True if in demo mode, False otherwise
@@ -40,12 +40,23 @@ def is_demo_mode() -> bool:
     if demo_env in ("true", "1", "yes"):
         return True
 
-    # Check if running on Streamlit Cloud
+    # Check if running on Streamlit Cloud - multiple detection methods
+    # Method 1: STREAMLIT_SHARING_MODE (older Streamlit Cloud)
     if os.environ.get("STREAMLIT_SHARING_MODE"):
         return True
 
-    # Check for other Streamlit Cloud indicators
-    if os.environ.get("HOME", "").startswith("/home/adminuser"):
+    # Method 2: HOME path for adminuser (Streamlit Cloud container)
+    home = os.environ.get("HOME", "")
+    if home.startswith("/home/adminuser") or home.startswith("/mount/src"):
+        return True
+
+    # Method 3: Check for Streamlit Cloud specific paths
+    if os.path.exists("/mount/src"):
+        return True
+
+    # Method 4: HOSTNAME pattern (Streamlit Cloud uses specific patterns)
+    hostname = os.environ.get("HOSTNAME", "")
+    if hostname.startswith("streamlit-") or "streamlit" in hostname.lower():
         return True
 
     return False
