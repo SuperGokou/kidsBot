@@ -567,47 +567,26 @@ def render_jarvis_controls(config: dict):
 
     is_active = st.session_state.is_listening_active
     btn_text = "Stop" if is_active else "Start"
-    bg_color = "#E74C3C" if is_active else "#FF9F1C"
+    btn_class = "jarvis-stop-btn" if is_active else "jarvis-start-btn"
 
-    # Style the button
-    st.markdown(f"""
-    <style>
-    .st-key-jarvis_toggle button {{
-        border-radius: 50% !important;
-        width: 80px !important;
-        height: 80px !important;
-        min-width: 80px !important;
-        min-height: 80px !important;
-        padding: 0 !important;
-        font-weight: bold !important;
-        font-size: 16px !important;
-        background: linear-gradient(145deg, {bg_color}, {bg_color}dd) !important;
-        border: none !important;
-        color: white !important;
-        box-shadow: 0 8px 25px rgba(0,0,0,0.25) !important;
-    }}
-    .st-key-jarvis_toggle button:hover {{
-        transform: scale(1.05);
-        box-shadow: 0 12px 35px rgba(0,0,0,0.35) !important;
-    }}
-    </style>
-    """, unsafe_allow_html=True)
+    # Open wrapper div with appropriate class
+    st.markdown(f'<div class="jarvis-mic-wrapper"><div class="{btn_class}">', unsafe_allow_html=True)
 
-    # Use empty columns to center
-    _, center_col, _ = st.columns([2, 1, 2])
-    with center_col:
-        if is_active:
-            if st.button(btn_text, key="jarvis_toggle"):
-                stop_listening_callback()
-                st.rerun()
-        else:
-            if st.button(btn_text, key="jarvis_toggle"):
-                st.session_state.is_listening_active = True
-                st.session_state.jarvis_active = True
-                st.session_state.jarvis_phase = "greeting"
-                st.session_state.jarvis_error = ""
-                st.session_state.jarvis_greeting = True
-                st.rerun()
+    if is_active:
+        if st.button(btn_text, key="jarvis_toggle"):
+            stop_listening_callback()
+            st.rerun()
+    else:
+        if st.button(btn_text, key="jarvis_toggle"):
+            st.session_state.is_listening_active = True
+            st.session_state.jarvis_active = True
+            st.session_state.jarvis_phase = "greeting"
+            st.session_state.jarvis_error = ""
+            st.session_state.jarvis_greeting = True
+            st.rerun()
+
+    # Close wrapper divs
+    st.markdown('</div></div>', unsafe_allow_html=True)
 
 
 def handle_jarvis_stop(config: dict):
