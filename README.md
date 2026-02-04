@@ -97,13 +97,6 @@ VV is a friendly AI robot companion designed specifically for young children, im
 
 ---
 
-## Demo
-
-<p align="center">
-  <a href="https://kidsbot-nfmrgkmdk8c5uem9jwctj6.streamlit.app/">
-    <img src="https://img.shields.io/badge/Live_Demo-kidsbot.streamlit.app-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white" alt="Live Demo"/>
-  </a>
-</p>
 
 ### User Interface
 
