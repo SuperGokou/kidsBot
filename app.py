@@ -567,10 +567,40 @@ def render_jarvis_controls(config: dict):
 
     is_active = st.session_state.is_listening_active
     btn_text = "Stop" if is_active else "Start"
-    btn_class = "jarvis-stop-btn" if is_active else "jarvis-start-btn"
 
-    # Open wrapper div with appropriate class
-    st.markdown(f'<div class="jarvis-mic-wrapper"><div class="{btn_class}">', unsafe_allow_html=True)
+    if is_active:
+        bg = "linear-gradient(145deg, #FF6B6B, #E74C3C)"
+        shadow = "0 8px 25px rgba(231, 76, 60, 0.5)"
+    else:
+        bg = "linear-gradient(145deg, #FFD166, #FF9F1C)"
+        shadow = "0 8px 25px rgba(255, 159, 28, 0.45)"
+
+    # Inject CSS targeting the key-based container
+    st.markdown(f"""
+    <style>
+    [data-testid="stMainBlockContainer"] .st-key-jarvis_toggle {{
+        display: flex;
+        justify-content: center;
+        width: 100%;
+    }}
+    [data-testid="stMainBlockContainer"] .st-key-jarvis_toggle > div {{
+        width: auto !important;
+    }}
+    [data-testid="stMainBlockContainer"] .st-key-jarvis_toggle button {{
+        width: 100px !important;
+        height: 100px !important;
+        min-height: 100px !important;
+        border-radius: 50% !important;
+        border: none !important;
+        background: {bg} !important;
+        box-shadow: {shadow} !important;
+        padding: 0 !important;
+        color: white !important;
+        font-weight: bold !important;
+        font-size: 16px !important;
+    }}
+    </style>
+    """, unsafe_allow_html=True)
 
     if is_active:
         if st.button(btn_text, key="jarvis_toggle"):
@@ -584,9 +614,6 @@ def render_jarvis_controls(config: dict):
             st.session_state.jarvis_error = ""
             st.session_state.jarvis_greeting = True
             st.rerun()
-
-    # Close wrapper divs
-    st.markdown('</div></div>', unsafe_allow_html=True)
 
 
 def handle_jarvis_stop(config: dict):
