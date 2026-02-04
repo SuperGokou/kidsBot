@@ -109,7 +109,7 @@ VV is a friendly AI robot companion designed specifically for young children, im
 
 The application features a modern, child-friendly interface with soft claymorphism design:
 
-![Screenshot](ScreenShot.png)
+![Screenshot](assets/screenshot.png)
 
 **Key UI Elements:**
 - **Sidebar Navigation** - Quick access to Home, Story, Learn, Game, and Settings
