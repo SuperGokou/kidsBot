@@ -191,10 +191,17 @@ class DeepSeekClient:
         api_config = config["api"]["deepseek"]
         robot_config = config["robot"]
 
-        # Get API key from environment variable
+        # Get API key from environment variable or Streamlit secrets
         api_key = os.getenv("DEEPSEEK_API_KEY")
         if not api_key:
-            raise ValueError("DEEPSEEK_API_KEY not found in environment. Check your .env file.")
+            # Try Streamlit secrets (for cloud deployment)
+            try:
+                import streamlit as st
+                api_key = st.secrets.get("DEEPSEEK_API_KEY")
+            except Exception:
+                pass
+        if not api_key:
+            raise ValueError("DEEPSEEK_API_KEY not found. Set it in .env file or Streamlit secrets.")
 
         # Initialize OpenAI client with DeepSeek endpoint
         self.client = OpenAI(
