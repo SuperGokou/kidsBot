@@ -62,7 +62,7 @@ def register_voice(encoder, audio_path: str, embedding_path: str) -> bool:
 def main():
     st.set_page_config(
         page_title="KidBot Admin",
-        page_icon="",
+        page_icon=":robot_face:",
         layout="centered"
     )
 

@@ -1142,9 +1142,10 @@ def chat_view(config: dict):
 # =============================================================================
 
 def main():
+    # Use emoji as page icon (more reliable on cloud than file path)
     st.set_page_config(
         page_title="KidBot",
-        page_icon="assets/bot.jpg",
+        page_icon=":robot_face:",
         layout="wide",
         initial_sidebar_state="expanded"
     )
