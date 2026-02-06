@@ -154,6 +154,7 @@ async def websocket_chat(websocket: WebSocket):
     
     try:
         active_language = None
+        chat_history: list[dict] = []
         while True:
             data = await websocket.receive_json()
 
@@ -176,12 +177,19 @@ async def websocket_chat(websocket: WebSocket):
             await websocket.send_json({"type": "start"})
 
             full_response = ""
-            for chunk in llm_client.get_response_stream(message, context_chunks, mode, language=language):
+            for chunk in llm_client.get_response_stream(
+                message, context_chunks, mode, language=language, history=chat_history
+            ):
                 full_response += chunk
                 await websocket.send_json({"type": "chunk", "content": chunk})
 
             # Parse commands
             commands, clean_response = parse_response(full_response)
+
+            # Track conversation history (keep last 10 turns)
+            chat_history.append({"role": "user", "content": message})
+            chat_history.append({"role": "assistant", "content": clean_response})
+            chat_history = chat_history[-20:]  # 10 turns = 20 messages
 
             # Track sticky language
             if commands.get("language"):

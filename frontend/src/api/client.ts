@@ -1,4 +1,4 @@
-import type { ChatResponse, AppStatus, ChatMode, ParentProfile, DailyReport } from '../types';
+import type { ChatResponse, ChatHistoryMessage, AppStatus, ChatMode, ParentProfile, DailyReport } from '../types';
 
 // API base URL - uses environment variable in production, proxy in development
 const API_BASE = import.meta.env.VITE_API_URL 
@@ -46,10 +46,15 @@ export const api = {
   },
 
   // Send chat message
-  async chat(message: string, mode: ChatMode, language?: string | null): Promise<ChatResponse> {
+  async chat(message: string, mode: ChatMode, language?: string | null, history?: ChatHistoryMessage[]): Promise<ChatResponse> {
     return fetchApi<ChatResponse>('/chat', {
       method: 'POST',
-      body: JSON.stringify({ message, mode, language: language || undefined }),
+      body: JSON.stringify({
+        message,
+        mode,
+        language: language || undefined,
+        history: history?.length ? history.slice(-10) : undefined,
+      }),
     });
   },
 
@@ -112,11 +117,12 @@ export const api = {
   },
 
   // Transcribe audio
-  async transcribeAudio(audioBlob: Blob): Promise<{ text: string; success: boolean }> {
+  async transcribeAudio(audioBlob: Blob, language?: string | null): Promise<{ text: string; success: boolean }> {
     const formData = new FormData();
     formData.append('audio', audioBlob, 'recording.wav');
 
-    const response = await fetch(`${API_BASE}/voice/transcribe`, {
+    const langParam = language ? `?language=${language}` : '';
+    const response = await fetch(`${API_BASE}/voice/transcribe${langParam}`, {
       method: 'POST',
       body: formData,
     });

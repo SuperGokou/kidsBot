@@ -212,6 +212,31 @@ class DeepSeekClient:
             prompt += f"\n\nCRITICAL: The child has been speaking {lang_name}. You MUST respond in {lang_name} unless they explicitly switch to another language (e.g. say 'switch to English' or 'speak English')."
         return prompt
 
+    def _build_messages(
+        self,
+        system_prompt: str,
+        user_input: str,
+        context_chunks: Optional[list[str]] = None,
+        history: Optional[list[dict]] = None
+    ) -> list[dict]:
+        """Build the messages array with system prompt, history, and current message."""
+        messages = [{"role": "system", "content": system_prompt}]
+
+        # Add conversation history (last 10 turns max to stay within token limits)
+        if history:
+            for msg in history[-10:]:
+                messages.append({"role": msg["role"], "content": msg["content"]})
+
+        # Build current user message with RAG context
+        if context_chunks:
+            context_section = self._format_context(context_chunks)
+            full_message = f"{user_input}{context_section}"
+        else:
+            full_message = user_input
+
+        messages.append({"role": "user", "content": full_message})
+        return messages
+
     def _format_context(self, context_chunks: list[str]) -> str:
         """Format context chunks into a readable string."""
         if not context_chunks:
@@ -227,24 +252,17 @@ class DeepSeekClient:
         user_input: str,
         context_chunks: Optional[list[str]] = None,
         mode: str = "chat",
-        language: Optional[str] = None
+        language: Optional[str] = None,
+        history: Optional[list[dict]] = None
     ) -> str:
         """Get a response from DeepSeek for the user's input."""
         system_prompt = self._build_system_prompt(mode, language)
-
-        if context_chunks:
-            context_section = self._format_context(context_chunks)
-            full_message = f"{user_input}{context_section}"
-        else:
-            full_message = user_input
+        messages = self._build_messages(system_prompt, user_input, context_chunks, history)
 
         try:
             response = self.client.chat.completions.create(
                 model=self.model,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": full_message}
-                ],
+                messages=messages,
                 temperature=DEFAULT_TEMPERATURE,
                 max_tokens=DEFAULT_MAX_TOKENS,
                 stream=False
@@ -270,24 +288,17 @@ class DeepSeekClient:
         user_input: str,
         context_chunks: Optional[list[str]] = None,
         mode: str = "chat",
-        language: Optional[str] = None
+        language: Optional[str] = None,
+        history: Optional[list[dict]] = None
     ) -> Generator[str, None, None]:
         """Stream response from DeepSeek for lower latency."""
         system_prompt = self._build_system_prompt(mode, language)
-
-        if context_chunks:
-            context_section = self._format_context(context_chunks)
-            full_message = f"{user_input}{context_section}"
-        else:
-            full_message = user_input
+        messages = self._build_messages(system_prompt, user_input, context_chunks, history)
 
         try:
             stream = self.client.chat.completions.create(
                 model=self.model,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": full_message}
-                ],
+                messages=messages,
                 temperature=DEFAULT_TEMPERATURE,
                 max_tokens=DEFAULT_MAX_TOKENS,
                 stream=True

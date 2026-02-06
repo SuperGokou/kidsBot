@@ -88,12 +88,16 @@ async def chat(request: ChatRequest):
         # Query RAG for context
         context_chunks = memory_manager.query_memory(request.message) if memory_manager else []
 
+        # Convert history to dicts for LLM client
+        history = [{"role": m.role, "content": m.content} for m in request.history] if request.history else None
+
         # Get LLM response
         response = llm_client.get_response(
             request.message,
             context_chunks,
             mode=request.mode,
-            language=effective_language
+            language=effective_language,
+            history=history
         )
 
         # Parse response for commands
@@ -148,13 +152,15 @@ async def chat_stream(request: ChatRequest):
             effective_language = detected_lang if detected_lang else request.language
 
             context_chunks = memory_manager.query_memory(request.message) if memory_manager else []
+            history = [{"role": m.role, "content": m.content} for m in request.history] if request.history else None
 
             full_response = ""
             for chunk in llm_client.get_response_stream(
                 request.message,
                 context_chunks,
                 mode=request.mode,
-                language=effective_language
+                language=effective_language,
+                history=history
             ):
                 full_response += chunk
                 yield f"data: {chunk}\n\n"

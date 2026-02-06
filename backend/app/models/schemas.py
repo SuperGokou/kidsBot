@@ -6,11 +6,18 @@ from typing import Optional, List
 from pydantic import BaseModel, EmailStr
 
 
+class ChatMessage(BaseModel):
+    """A single message in conversation history."""
+    role: str  # "user" or "assistant"
+    content: str
+
+
 class ChatRequest(BaseModel):
     """Chat message request."""
     message: str
     mode: str = "chat"  # chat, story, learning, game
     language: Optional[str] = None  # sticky language preference (e.g. "zh", "en", "es", "ja")
+    history: Optional[List[ChatMessage]] = None  # recent conversation history
 
 
 class ChatResponse(BaseModel):

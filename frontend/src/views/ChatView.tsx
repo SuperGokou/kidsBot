@@ -8,7 +8,7 @@ import { useStore } from '../store/useStore';
 import { api } from '../api/client';
 import { Send, MessageCircle, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { ChatMode } from '../types';
+import type { ChatMode, ChatHistoryMessage } from '../types';
 
 export function ChatView() {
   const {
@@ -53,6 +53,10 @@ export function ChatView() {
   useEffect(() => {
     currentLanguageRef.current = currentLanguage;
   }, [currentLanguage]);
+
+  const getHistory = useCallback((): ChatHistoryMessage[] => {
+    return messages.slice(-10).map(m => ({ role: m.role, content: m.content }));
+  }, [messages]);
 
   const SILENCE_THRESHOLD = 0.015;
   const SILENCE_DURATION = 1500;
@@ -214,7 +218,7 @@ export function ChatView() {
 
     try {
       console.log('[Chat] Transcribing...');
-      const { text, success } = await api.transcribeAudio(audioBlob);
+      const { text, success } = await api.transcribeAudio(audioBlob, currentLanguageRef.current);
       
       if (!success || !text) {
         console.log('[Chat] Transcription failed');
@@ -236,7 +240,7 @@ export function ChatView() {
       addMessage({ role: 'user', content: text });
 
       console.log('[Chat] Getting AI response in mode:', currentModeRef.current, 'lang:', currentLanguageRef.current);
-      const response = await api.chat(text, currentModeRef.current, currentLanguageRef.current);
+      const response = await api.chat(text, currentModeRef.current, currentLanguageRef.current, getHistory());
       if (response.language) {
         setCurrentLanguage(response.language);
         currentLanguageRef.current = response.language;
@@ -489,7 +493,7 @@ export function ChatView() {
     
     try {
       addMessage({ role: 'user', content: message });
-      const response = await api.chat(message, currentMode, currentLanguage);
+      const response = await api.chat(message, currentMode, currentLanguage, getHistory());
       if (response.language) {
         setCurrentLanguage(response.language);
       }

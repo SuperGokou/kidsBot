@@ -8,6 +8,11 @@ export interface Message {
   timestamp: Date;
 }
 
+export interface ChatHistoryMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
 export interface ChatResponse {
   response: string;
   mode?: ChatMode;

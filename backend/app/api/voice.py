@@ -51,14 +51,26 @@ def detect_language(text: str) -> str:
     return TTS_VOICES["en"]
 
 
+# Language code mapping for Google Speech Recognition
+STT_LANGUAGES = {
+    "en": "en-US",
+    "zh": "zh-CN",
+    "es": "es-MX",
+    "ja": "ja-JP",
+}
+
+
 @router.post("/voice/transcribe")
-async def transcribe_audio(audio: UploadFile = File(...)):
+async def transcribe_audio(audio: UploadFile = File(...), language: Optional[str] = None):
     """
     Transcribe audio file to text.
-    
+
     Accepts WAV or WebM audio files.
+    Pass language param (en/zh/es/ja) for better recognition accuracy.
     """
     import speech_recognition as sr
+
+    stt_lang = STT_LANGUAGES.get(language, "en-US") if language else "en-US"
     
     # Determine file type from content type or filename
     content_type = audio.content_type or ""
@@ -104,7 +116,8 @@ async def transcribe_audio(audio: UploadFile = File(...)):
         try:
             with sr.AudioFile(wav_path) as source:
                 audio_data = recognizer.record(source)
-                text = recognizer.recognize_google(audio_data)
+                text = recognizer.recognize_google(audio_data, language=stt_lang)
+                print(f"[Transcribe] Language: {stt_lang} | Text: {text}")
                 return {"text": text, "success": True}
         except Exception as audio_error:
             print(f"[Transcribe] Audio file error: {audio_error}")
