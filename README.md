@@ -26,6 +26,10 @@
   <img src="https://img.shields.io/badge/License-Proprietary-red?style=flat-square" alt="License"/>
 </p>
 
+<p align="center">
+  <a href="https://kidsbot-p8af.onrender.com"><strong>Live Demo</strong></a>
+</p>
+
 <br/>
 
 <p align="center">
