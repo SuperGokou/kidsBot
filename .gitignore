@@ -1,17 +1,84 @@
 # KidBot .gitignore
+# Comprehensive ignore list for sensitive and generated files
 
-# ===================
-# Sensitive Files
-# ===================
-config/config.yaml
+# =============================================================================
+# SENSITIVE FILES - API KEYS & SECRETS (CRITICAL!)
+# =============================================================================
+# Environment files with API keys
+.env
+.env.*
+.env.local
+.env.development
+.env.production
 *.env
-.env*
-secrets.yaml
-**/api_key*
 
-# ===================
+# Config files with secrets
+config/config.yaml
+secrets.yaml
+secrets.json
+*.secret
+*.secrets
+
+# API key files
+**/api_key*
+**/apikey*
+**/*_api_key*
+**/*_apikey*
+*.pem
+*.key
+*.crt
+
+# =============================================================================
+# AI/Claude/Cursor Related Files
+# =============================================================================
+.claude/
+.claude_*
+.cursor/
+.cursorignore
+.cursorrules
+.aider*
+.continue/
+.copilot/
+.github/copilot/
+
+# AI conversation logs
+**/conversations/
+**/chat_history/
+*.conversation
+*.chat
+
+# =============================================================================
+# Data Files (User-specific / Large)
+# =============================================================================
+# Vector database (regenerated from raw docs)
+data/vector_store/*
+!data/vector_store/.gitkeep
+
+# Raw documents (user-specific content)
+data/raw_docs/*
+!data/raw_docs/.gitkeep
+
+# Voice prints (biometric data - SENSITIVE!)
+data/voice_prints/*
+!data/voice_prints/.gitkeep
+
+# Parent profiles and reports (SENSITIVE!)
+data/parent_profile.json
+data/daily_interactions.json
+data/daily_reports.json
+
+# Audio files
+*.mp3
+*.wav
+*.webm
+*.ogg
+*.m4a
+temp_output.*
+recording_*
+
+# =============================================================================
 # Python
-# ===================
+# =============================================================================
 __pycache__/
 *.py[cod]
 *$py.class
@@ -32,63 +99,192 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+MANIFEST
 
 # Virtual environments
 venv/
 ENV/
 env/
 .venv/
+.conda/
+conda-env/
 
-# ===================
-# Data Files
-# ===================
-data/vector_store/*
-!data/vector_store/.gitkeep
-data/raw_docs/*
-!data/raw_docs/.gitkeep
-data/voice_prints/*
-!data/voice_prints/.gitkeep
-*.mp3
-*.wav
-temp_output.*
+# PyInstaller
+*.manifest
+*.spec
 
-# ===================
-# ML Models (cached by huggingface)
-# ===================
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# =============================================================================
+# Node.js / Frontend
+# =============================================================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Build output
+frontend/dist/
+frontend/build/
+.next/
+out/
+
+# Dependency directories
+jspm_packages/
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Optional eslint cache
+.eslintcache
+
+# Vite
+*.local
+
+# =============================================================================
+# ML Models & Caches
+# =============================================================================
+# Hugging Face cache
+.cache/
+~/.cache/huggingface/
 saved_models/
 
-# ===================
-# IDE
-# ===================
-.idea/
+# Model weights (large files)
+*.pt
+*.pth
+*.onnx
+*.h5
+*.pb
+*.bin
+!data/vector_store/**/*.bin
+
+# Sentence transformers cache
+sentence_transformers/
+
+# =============================================================================
+# IDE & Editors
+# =============================================================================
+# VS Code
 .vscode/
+*.code-workspace
+
+# JetBrains (PyCharm, WebStorm, etc.)
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Vim
 *.swp
 *.swo
 *~
+.netrwhist
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+
+# Sublime Text
+*.sublime-workspace
+*.sublime-project
+
+# Eclipse
 .project
 .pydevproject
 .settings/
+.metadata/
 
-# ===================
-# OS
-# ===================
+# =============================================================================
+# OS Generated
+# =============================================================================
+# macOS
 .DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
 Thumbs.db
-desktop.ini
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.lnk
 nul
 NUL
 
-# ===================
-# Logs & Cache
-# ===================
-*.log
-.cache/
-.claude/
-*.sqlite3
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
 
-# ===================
-# Misc
-# ===================
-*.bak
+# =============================================================================
+# Logs & Temporary Files
+# =============================================================================
+*.log
+logs/
 *.tmp
 *.temp
+*.bak
+*.backup
+*.old
+*.orig
+
+# SQLite databases (except vector store)
+*.sqlite3
+*.db
+!data/vector_store/*.sqlite3
+
+# =============================================================================
+# Screenshots & Images (optional - uncomment if needed)
+# =============================================================================
+# screencapture.png
+# *.png
+# *.jpg
+# *.jpeg
+# *.gif
+# !assets/**
+# !frontend/public/**
+
+# =============================================================================
+# Misc
+# =============================================================================
+# Terraform
+*.tfstate
+*.tfstate.*
+
+# Docker
+docker-compose.override.yml
+
+# Local development
+local/
+.local/

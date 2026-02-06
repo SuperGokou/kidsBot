@@ -1,5 +1,5 @@
-# KidBot - AI Companion for Kids
-# Root requirements file for Render.com deployment
+# KidBot Backend Dependencies
+# For deployment on Render.com
 
 # =============================================================================
 # Web Framework
@@ -24,8 +24,14 @@ sentence-transformers==2.3.1
 # =============================================================================
 # Voice & Audio
 # =============================================================================
+# Text-to-Speech (Multi-language)
 edge-tts==6.1.9
+
+# Speech Recognition
 SpeechRecognition==3.10.1
+
+# Voice Verification (optional - comment out if not needed)
+# resemblyzer==0.1.4
 
 # =============================================================================
 # Core Dependencies
