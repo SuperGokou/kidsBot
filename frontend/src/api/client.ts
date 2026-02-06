@@ -98,9 +98,10 @@ export const api = {
   },
 
   // Text to speech
-  async getTtsAudio(text: string): Promise<Blob> {
+  async getTtsAudio(text: string, options?: { signal?: AbortSignal }): Promise<Blob> {
     const response = await fetch(`${API_BASE}/tts?text=${encodeURIComponent(text)}`, {
       method: 'POST',
+      signal: options?.signal,
     });
     
     if (!response.ok) {

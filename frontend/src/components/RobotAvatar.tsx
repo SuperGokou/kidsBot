@@ -72,7 +72,6 @@ export function RobotAvatar({ imageSrc }: RobotAvatarProps) {
               transition={{ duration: 0.5, repeat: Infinity }}
             />
           ) : (
-            {/* Placeholder robot text */}
             <div className="w-full h-full flex items-center justify-center bg-gradient-to-b from-gray-100 to-gray-200">
               <motion.div
                 className="text-6xl sm:text-7xl md:text-8xl font-bold text-orange-400"

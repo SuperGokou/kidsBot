@@ -40,7 +40,7 @@ interface AppState {
   setOnModeSwitch: (callback: ((mode: ChatMode, greeting: string) => void) | null) => void;
 }
 
-export const useStore = create<AppState>((set, get) => ({
+export const useStore = create<AppState>((set) => ({
   // App status
   status: {
     status: 'loading',

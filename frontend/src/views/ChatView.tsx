@@ -51,29 +51,113 @@ export function ChatView() {
   const SILENCE_DURATION = 1500;
   const MAX_RECORD_TIME = 20000;
 
-  const speakResponse = useCallback(async (text: string): Promise<void> => {
-    if (!ttsEnabled) return;
-    
-    try {
-      const audioData = await api.getTtsAudio(text);
-      const audioUrl = URL.createObjectURL(audioData);
-      const audio = new Audio(audioUrl);
-      
-      return new Promise((resolve) => {
-        audio.onended = () => {
-          URL.revokeObjectURL(audioUrl);
-          resolve();
-        };
-        audio.onerror = () => {
-          URL.revokeObjectURL(audioUrl);
-          resolve();
-        };
-        audio.play().catch(() => resolve());
-      });
-    } catch (e) {
-      console.error('TTS error:', e);
+  // Single-instance TTS playback control (prevents overlapping voices)
+  const ttsAudioRef = useRef<HTMLAudioElement | null>(null);
+  const ttsUrlRef = useRef<string | null>(null);
+  const ttsAbortRef = useRef<AbortController | null>(null);
+  const ttsSeqRef = useRef(0);
+  const ttsResolveRef = useRef<(() => void) | null>(null);
+
+  const stopTtsNow = useCallback(() => {
+    // Abort any in-flight TTS request
+    if (ttsAbortRef.current) {
+      try {
+        ttsAbortRef.current.abort();
+      } catch {
+        // ignore
+      }
+      ttsAbortRef.current = null;
     }
-  }, [ttsEnabled]);
+
+    // Stop any currently playing audio immediately
+    if (ttsAudioRef.current) {
+      try {
+        ttsAudioRef.current.onended = null;
+        ttsAudioRef.current.onerror = null;
+        ttsAudioRef.current.pause();
+        ttsAudioRef.current.currentTime = 0;
+      } catch {
+        // ignore
+      }
+      ttsAudioRef.current = null;
+    }
+
+    // Release blob URL
+    if (ttsUrlRef.current) {
+      try {
+        URL.revokeObjectURL(ttsUrlRef.current);
+      } catch {
+        // ignore
+      }
+      ttsUrlRef.current = null;
+    }
+
+    // Resolve any pending speak() promise so callers don't hang
+    if (ttsResolveRef.current) {
+      try {
+        ttsResolveRef.current();
+      } catch {
+        // ignore
+      }
+      ttsResolveRef.current = null;
+    }
+  }, []);
+
+  const speakResponse = useCallback(
+    async (text: string): Promise<void> => {
+      if (!ttsEnabled) return;
+
+      // Ensure we never overlap audio
+      stopTtsNow();
+
+      const seq = ++ttsSeqRef.current;
+      const abortController = new AbortController();
+      ttsAbortRef.current = abortController;
+
+      try {
+        const audioData = await api.getTtsAudio(text, { signal: abortController.signal });
+
+        // If a newer TTS request started, ignore this one.
+        if (seq !== ttsSeqRef.current) return;
+
+        const audioUrl = URL.createObjectURL(audioData);
+        ttsUrlRef.current = audioUrl;
+        const audio = new Audio(audioUrl);
+        ttsAudioRef.current = audio;
+
+        return await new Promise<void>((resolve) => {
+          ttsResolveRef.current = resolve;
+
+          const cleanupAndResolve = () => {
+            if (ttsResolveRef.current === resolve) {
+              ttsResolveRef.current = null;
+            }
+            if (ttsAudioRef.current === audio) {
+              ttsAudioRef.current = null;
+            }
+            if (ttsUrlRef.current === audioUrl) {
+              URL.revokeObjectURL(audioUrl);
+              ttsUrlRef.current = null;
+            }
+            resolve();
+          };
+
+          audio.onended = cleanupAndResolve;
+          audio.onerror = cleanupAndResolve;
+          audio.play().catch(cleanupAndResolve);
+        });
+      } catch (e) {
+        // Ignore abort errors; those are expected when switching modes quickly.
+        if ((e as any)?.name === 'AbortError') return;
+        console.error('TTS error:', e);
+      } finally {
+        if (ttsAbortRef.current === abortController) {
+          ttsAbortRef.current = null;
+        }
+      }
+    },
+    [ttsEnabled, stopTtsNow]
+  );
 
   const getAudioLevel = useCallback((analyser: AnalyserNode): number => {
     const dataArray = new Uint8Array(analyser.frequencyBinCount);
@@ -290,6 +374,8 @@ export function ChatView() {
 
   const handleModeSwitch = useCallback(async (mode: ChatMode, greeting: string) => {
     console.log('[Chat] Mode switched to:', mode, 'Active:', conversationActive);
+    // Stop any currently speaking voice immediately so we never overlap.
+    stopTtsNow();
     
     if (conversationActive || jarvisPhase !== 'idle') {
       isRecordingRef.current = false;
@@ -320,7 +406,7 @@ export function ChatView() {
       await speakResponse(greeting);
       setJarvisPhase('idle');
     }
-  }, [conversationActive, jarvisPhase, speakResponse, setJarvisPhase, setIsListening, startRecording]);
+  }, [conversationActive, jarvisPhase, speakResponse, setJarvisPhase, setIsListening, startRecording, stopTtsNow]);
 
   useEffect(() => {
     setOnModeSwitch(handleModeSwitch);
@@ -351,6 +437,7 @@ export function ChatView() {
     shouldContinueRef.current = false;
     setConversationActive(false);
     isRecordingRef.current = false;
+    stopTtsNow();
     
     if (rafIdRef.current) {
       cancelAnimationFrame(rafIdRef.current);
@@ -369,7 +456,7 @@ export function ChatView() {
     setJarvisPhase('idle');
     setIsListening(false);
     setAudioLevel(0);
-  }, [setJarvisPhase, setIsListening]);
+  }, [setJarvisPhase, setIsListening, stopTtsNow]);
 
   const handleMicClick = useCallback(() => {
     if (conversationActive || jarvisPhase !== 'idle') {
