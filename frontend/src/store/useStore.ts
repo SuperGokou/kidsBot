@@ -15,6 +15,10 @@ interface AppState {
   currentMode: ChatMode;
   setCurrentMode: (mode: ChatMode) => void;
 
+  // Sticky language preference
+  currentLanguage: string | null;
+  setCurrentLanguage: (language: string | null) => void;
+
   // Current view (chat, settings, register)
   currentView: ViewType;
   setCurrentView: (view: ViewType) => void;
@@ -68,6 +72,10 @@ export const useStore = create<AppState>((set) => ({
   // Current mode
   currentMode: 'chat',
   setCurrentMode: (mode) => set({ currentMode: mode }),
+
+  // Sticky language
+  currentLanguage: null,
+  setCurrentLanguage: (language) => set({ currentLanguage: language }),
 
   // Current view
   currentView: 'chat',

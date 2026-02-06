@@ -21,6 +21,8 @@ export function ChatView() {
     status,
     setOnModeSwitch,
     messages,
+    currentLanguage,
+    setCurrentLanguage,
   } = useStore();
 
   const [textInput, setTextInput] = useState('');
@@ -42,10 +44,15 @@ export function ChatView() {
   const rafIdRef = useRef<number | null>(null);
   const isRecordingRef = useRef(false);
   const currentModeRef = useRef(currentMode);
+  const currentLanguageRef = useRef(currentLanguage);
 
   useEffect(() => {
     currentModeRef.current = currentMode;
   }, [currentMode]);
+
+  useEffect(() => {
+    currentLanguageRef.current = currentLanguage;
+  }, [currentLanguage]);
 
   const SILENCE_THRESHOLD = 0.015;
   const SILENCE_DURATION = 1500;
@@ -228,8 +235,12 @@ export function ChatView() {
       console.log('[Chat] You said:', text);
       addMessage({ role: 'user', content: text });
 
-      console.log('[Chat] Getting AI response in mode:', currentModeRef.current);
-      const response = await api.chat(text, currentModeRef.current);
+      console.log('[Chat] Getting AI response in mode:', currentModeRef.current, 'lang:', currentLanguageRef.current);
+      const response = await api.chat(text, currentModeRef.current, currentLanguageRef.current);
+      if (response.language) {
+        setCurrentLanguage(response.language);
+        currentLanguageRef.current = response.language;
+      }
       console.log('[Chat] AI said:', response.response);
 
       setJarvisPhase('speaking');
@@ -257,7 +268,7 @@ export function ChatView() {
         setJarvisPhase('idle');
       }
     }
-  }, [setJarvisPhase, setIsListening, addMessage, speakResponse]);
+  }, [setJarvisPhase, setIsListening, addMessage, speakResponse, setCurrentLanguage]);
 
   const monitorAudio = useCallback(() => {
     if (!analyserRef.current || !isRecordingRef.current) return;
@@ -478,12 +489,15 @@ export function ChatView() {
     
     try {
       addMessage({ role: 'user', content: message });
-      const response = await api.chat(message, currentMode);
-      
+      const response = await api.chat(message, currentMode, currentLanguage);
+      if (response.language) {
+        setCurrentLanguage(response.language);
+      }
+
       setJarvisPhase('speaking');
       addMessage({ role: 'assistant', content: response.response });
       await speakResponse(response.response);
-      
+
       setJarvisPhase('idle');
     } catch (error) {
       console.error('[Chat] Error:', error);
@@ -492,7 +506,7 @@ export function ChatView() {
     } finally {
       setIsLoading(false);
     }
-  }, [textInput, isLoading, jarvisPhase, currentMode, setJarvisPhase, addMessage, speakResponse]);
+  }, [textInput, isLoading, jarvisPhase, currentMode, currentLanguage, setCurrentLanguage, setJarvisPhase, addMessage, speakResponse]);
 
   return (
     <div className="h-screen overflow-hidden relative">

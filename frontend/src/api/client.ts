@@ -46,10 +46,10 @@ export const api = {
   },
 
   // Send chat message
-  async chat(message: string, mode: ChatMode): Promise<ChatResponse> {
+  async chat(message: string, mode: ChatMode, language?: string | null): Promise<ChatResponse> {
     return fetchApi<ChatResponse>('/chat', {
       method: 'POST',
-      body: JSON.stringify({ message, mode }),
+      body: JSON.stringify({ message, mode, language: language || undefined }),
     });
   },
 

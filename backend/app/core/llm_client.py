@@ -122,11 +122,19 @@ You are a robot with control over your system state. Use special tags to trigger
 LANGUAGE DETECTION (CRITICAL):
 You MUST respond in the SAME LANGUAGE the child speaks to you:
 - If the child speaks Chinese (中文), respond in Chinese
-- If the child speaks Spanish (Español), respond in Spanish  
+- If the child speaks Spanish (Español), respond in Spanish
 - If the child speaks Japanese (日本語), respond in Japanese
 - If the child speaks English, respond in English
 - Detect the language automatically and match it perfectly
 - Keep the same friendly, child-appropriate tone in all languages
+
+LANGUAGE SWITCHING:
+When you detect a language change, output a language tag at the START of your response:
+- [[LANGUAGE: zh]] - when switching to or continuing in Chinese
+- [[LANGUAGE: en]] - when switching to or continuing in English
+- [[LANGUAGE: es]] - when switching to or continuing in Spanish
+- [[LANGUAGE: ja]] - when switching to or continuing in Japanese
+- ALWAYS include the [[LANGUAGE: xx]] tag in every response so the system can track the active language
 
 MODE SWITCHING:
 If the user asks to change topics or modes (e.g., "Let's play a game", "Tell me a story", "I want to learn", "Let's just chat"), output the appropriate mode tag at the START of your response:
@@ -190,14 +198,19 @@ class DeepSeekClient:
         self.robot_name = robot_config.get("name", "VV")
         self.personality = robot_config.get("personality", "friendly and curious")
 
-    def _build_system_prompt(self, mode: str = "chat") -> str:
+    def _build_system_prompt(self, mode: str = "chat", language: Optional[str] = None) -> str:
         """Construct the system prompt for the specified mode."""
         template = MODE_PROMPTS.get(mode, MODE_PROMPTS["chat"])
         base_prompt = template.format(
             robot_name=self.robot_name,
             personality=self.personality
         )
-        return base_prompt + META_INSTRUCTION
+        prompt = base_prompt + META_INSTRUCTION
+        if language and language != "en":
+            lang_names = {"zh": "Chinese (中文)", "es": "Spanish (Español)", "ja": "Japanese (日本語)"}
+            lang_name = lang_names.get(language, language)
+            prompt += f"\n\nCRITICAL: The child has been speaking {lang_name}. You MUST respond in {lang_name} unless they explicitly switch to another language (e.g. say 'switch to English' or 'speak English')."
+        return prompt
 
     def _format_context(self, context_chunks: list[str]) -> str:
         """Format context chunks into a readable string."""
@@ -213,10 +226,11 @@ class DeepSeekClient:
         self,
         user_input: str,
         context_chunks: Optional[list[str]] = None,
-        mode: str = "chat"
+        mode: str = "chat",
+        language: Optional[str] = None
     ) -> str:
         """Get a response from DeepSeek for the user's input."""
-        system_prompt = self._build_system_prompt(mode)
+        system_prompt = self._build_system_prompt(mode, language)
 
         if context_chunks:
             context_section = self._format_context(context_chunks)
@@ -255,10 +269,11 @@ class DeepSeekClient:
         self,
         user_input: str,
         context_chunks: Optional[list[str]] = None,
-        mode: str = "chat"
+        mode: str = "chat",
+        language: Optional[str] = None
     ) -> Generator[str, None, None]:
         """Stream response from DeepSeek for lower latency."""
-        system_prompt = self._build_system_prompt(mode)
+        system_prompt = self._build_system_prompt(mode, language)
 
         if context_chunks:
             context_section = self._format_context(context_chunks)

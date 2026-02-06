@@ -2,6 +2,7 @@
 Chat API endpoints.
 """
 
+import re
 import threading
 from typing import Optional
 
@@ -13,6 +14,24 @@ from ..core.dependencies import get_llm_client, get_memory_manager
 from ..services.interactions import save_interaction
 
 router = APIRouter()
+
+
+def detect_input_language(text: str) -> Optional[str]:
+    """Detect language from user input text. Returns language code or None if ambiguous."""
+    # Japanese-specific characters (Hiragana, Katakana) take priority
+    if any('\u3040' <= c <= '\u30ff' for c in text):
+        return "ja"
+    # Chinese characters (CJK Unified Ideographs)
+    if any('\u4e00' <= c <= '\u9fff' for c in text):
+        return "zh"
+    # Spanish indicators
+    spanish_chars = set('ñ¿¡áéíóúü')
+    spanish_words = {'hola', 'qué', 'cómo', 'por', 'para', 'está', 'esto', 'muy', 'bien'}
+    text_lower = text.lower()
+    words = set(re.findall(r'\w+', text_lower))
+    if any(c in text for c in spanish_chars) or words & spanish_words:
+        return "es"
+    return None
 
 
 # Mode information
@@ -62,24 +81,29 @@ async def chat(request: ChatRequest):
         # Import here to avoid circular imports
         from ..core.response_parser import parse_response
         
+        # Detect language from user input and update sticky language
+        detected_lang = detect_input_language(request.message)
+        effective_language = detected_lang if detected_lang else request.language
+
         # Query RAG for context
         context_chunks = memory_manager.query_memory(request.message) if memory_manager else []
-        
+
         # Get LLM response
         response = llm_client.get_response(
             request.message,
             context_chunks,
-            mode=request.mode
+            mode=request.mode,
+            language=effective_language
         )
-        
+
         # Parse response for commands
         commands, clean_response = parse_response(response)
-        
+
         # Log interaction for daily reports
         save_interaction(request.mode, request.message, clean_response)
-        
-        # Auto-learning in background (only in chat mode)
-        if request.mode == "chat" and memory_manager:
+
+        # Auto-learning in background
+        if memory_manager:
             def auto_learn():
                 try:
                     fact = llm_client.extract_personal_info(request.message)
@@ -87,14 +111,15 @@ async def chat(request: ChatRequest):
                         memory_manager.add_memory(fact)
                 except Exception as e:
                     print(f"[AutoLearn] Error: {e}")
-            
+
             thread = threading.Thread(target=auto_learn, daemon=True)
             thread.start()
-        
+
         return ChatResponse(
             response=clean_response,
             mode=commands.get("mode"),
-            action=commands.get("action")
+            action=commands.get("action"),
+            language=commands.get("language")
         )
         
     except Exception as e:
@@ -118,14 +143,18 @@ async def chat_stream(request: ChatRequest):
     async def generate():
         try:
             from ..core.response_parser import parse_response
-            
+
+            detected_lang = detect_input_language(request.message)
+            effective_language = detected_lang if detected_lang else request.language
+
             context_chunks = memory_manager.query_memory(request.message) if memory_manager else []
-            
+
             full_response = ""
             for chunk in llm_client.get_response_stream(
                 request.message,
                 context_chunks,
-                mode=request.mode
+                mode=request.mode,
+                language=effective_language
             ):
                 full_response += chunk
                 yield f"data: {chunk}\n\n"

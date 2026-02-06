@@ -9,10 +9,6 @@
 </p>
 
 <p align="center">
-  <em>Software-led. Hardware-supported. Classroom-proven.</em>
-</p>
-
-<p align="center">
   <img src="https://img.shields.io/badge/React-18.x-61DAFB?style=flat-square&logo=react&logoColor=white" alt="React"/>
   <img src="https://img.shields.io/badge/FastAPI-0.100+-009688?style=flat-square&logo=fastapi&logoColor=white" alt="FastAPI"/>
   <img src="https://img.shields.io/badge/TypeScript-5.x-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript"/>

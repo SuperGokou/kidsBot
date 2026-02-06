@@ -12,6 +12,7 @@ export interface ChatResponse {
   response: string;
   mode?: ChatMode;
   action?: string;
+  language?: string;
 }
 
 // Status types

@@ -4,15 +4,20 @@ KidBot FastAPI Backend
 Main entry point for the FastAPI application.
 """
 
+import threading
 from contextlib import asynccontextmanager
+from pathlib import Path
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from .config import load_config
 from .core.dependencies import init_dependencies, get_llm_client, get_memory_manager
 from .core.response_parser import parse_response
 from .api import api_router
+from .api.chat import detect_input_language
 from .api.parent import load_parent_profile, get_parent_profile_data
 from .services.interactions import load_interactions
 from .models import StatusResponse
@@ -75,13 +80,15 @@ app.include_router(api_router)
 
 
 # =============================================================================
-# Root Endpoints
+# Static Frontend Serving
 # =============================================================================
 
-@app.get("/")
-async def root():
-    """Health check endpoint."""
-    return {"status": "ok", "service": "KidBot API", "version": "1.0.0"}
+# Path to the built React frontend
+FRONTEND_DIR = Path(__file__).resolve().parent.parent.parent / "frontend" / "dist"
+
+# Mount static assets if frontend is built
+if FRONTEND_DIR.is_dir() and (FRONTEND_DIR / "assets").is_dir():
+    app.mount("/assets", StaticFiles(directory=str(FRONTEND_DIR / "assets")), name="static-assets")
 
 
 @app.get("/api/status", response_model=StatusResponse)
@@ -146,38 +153,81 @@ async def websocket_chat(websocket: WebSocket):
     await manager.connect(websocket)
     
     try:
+        active_language = None
         while True:
             data = await websocket.receive_json()
-            
+
             message = data.get("message", "")
             mode = data.get("mode", "chat")
-            
+            language = data.get("language", active_language)
+
             if not message:
                 continue
-            
+
+            # Detect language from user input
+            detected_lang = detect_input_language(message)
+            if detected_lang:
+                language = detected_lang
+
             # Get context
             context_chunks = memory_manager.query_memory(message) if memory_manager else []
-            
+
             # Stream response
             await websocket.send_json({"type": "start"})
-            
+
             full_response = ""
-            for chunk in llm_client.get_response_stream(message, context_chunks, mode):
+            for chunk in llm_client.get_response_stream(message, context_chunks, mode, language=language):
                 full_response += chunk
                 await websocket.send_json({"type": "chunk", "content": chunk})
-            
+
             # Parse commands
             commands, clean_response = parse_response(full_response)
-            
+
+            # Track sticky language
+            if commands.get("language"):
+                active_language = commands["language"]
+
+            # Auto-learn personal facts in background
+            if memory_manager:
+                def auto_learn(text=message):
+                    try:
+                        fact = llm_client.extract_personal_info(text)
+                        if fact:
+                            memory_manager.add_memory(fact)
+                    except Exception as e:
+                        print(f"[AutoLearn] Error: {e}")
+                threading.Thread(target=auto_learn, daemon=True).start()
+
             await websocket.send_json({
                 "type": "done",
                 "response": clean_response,
                 "mode": commands.get("mode"),
-                "action": commands.get("action")
+                "action": commands.get("action"),
+                "language": commands.get("language")
             })
             
     except WebSocketDisconnect:
         manager.disconnect(websocket)
+
+
+# =============================================================================
+# SPA Catch-All (must be last)
+# =============================================================================
+
+@app.get("/{full_path:path}")
+async def serve_spa(request: Request, full_path: str):
+    """Serve React frontend for any non-API, non-WS path."""
+    # Serve root-level static files (e.g. bot-icon.png, manifest.json)
+    if full_path:
+        static_file = FRONTEND_DIR / full_path
+        if static_file.is_file():
+            return FileResponse(str(static_file))
+    # Fall back to index.html for SPA routing
+    index_file = FRONTEND_DIR / "index.html"
+    if index_file.is_file():
+        return FileResponse(str(index_file))
+    # Fallback if frontend is not built
+    return {"status": "ok", "service": "KidBot API", "version": "1.0.0"}
 
 
 # =============================================================================

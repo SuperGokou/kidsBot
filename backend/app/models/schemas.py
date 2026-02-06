@@ -10,6 +10,7 @@ class ChatRequest(BaseModel):
     """Chat message request."""
     message: str
     mode: str = "chat"  # chat, story, learning, game
+    language: Optional[str] = None  # sticky language preference (e.g. "zh", "en", "es", "ja")
 
 
 class ChatResponse(BaseModel):
@@ -17,6 +18,7 @@ class ChatResponse(BaseModel):
     response: str
     mode: Optional[str] = None
     action: Optional[str] = None
+    language: Optional[str] = None
 
 
 class ModeInfo(BaseModel):
