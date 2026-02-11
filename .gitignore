@@ -176,7 +176,6 @@ saved_models/
 *.h5
 *.pb
 *.bin
-!data/vector_store/**/*.bin
 
 # Sentence transformers cache
 sentence_transformers/
@@ -259,10 +258,9 @@ logs/
 *.old
 *.orig
 
-# SQLite databases (except vector store)
+# SQLite databases
 *.sqlite3
 *.db
-!data/vector_store/*.sqlite3
 
 # =============================================================================
 # Screenshots & Images (optional - uncomment if needed)

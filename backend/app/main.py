@@ -87,6 +87,10 @@ FRONTEND_DIR = Path(__file__).resolve().parent.parent.parent / "frontend" / "dis
 # Mount static assets if frontend is built
 if FRONTEND_DIR.is_dir() and (FRONTEND_DIR / "assets").is_dir():
     app.mount("/assets", StaticFiles(directory=str(FRONTEND_DIR / "assets")), name="static-assets")
+    print(f"[Frontend] Serving static files from: {FRONTEND_DIR}")
+else:
+    print(f"[Frontend] WARNING: Frontend dist not found at: {FRONTEND_DIR}")
+    print(f"[Frontend] Build the frontend first: cd frontend && npm install --include=dev && npm run build")
 
 
 @app.get("/api/status", response_model=StatusResponse)
