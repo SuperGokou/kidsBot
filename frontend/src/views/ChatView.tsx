@@ -43,6 +43,7 @@ export function ChatView() {
   const speechDetectedRef = useRef(false);
   const rafIdRef = useRef<number | null>(null);
   const isRecordingRef = useRef(false);
+  const skipProcessAudioRef = useRef(false);
   const currentModeRef = useRef(currentMode);
   const currentLanguageRef = useRef(currentLanguage);
 
@@ -218,8 +219,13 @@ export function ChatView() {
   const startRecordingRef = useRef<() => Promise<void>>();
 
   const processAudio = useCallback(async (audioBlob: Blob) => {
+    if (skipProcessAudioRef.current) {
+      skipProcessAudioRef.current = false;
+      return;
+    }
+
     console.log('[Chat] Processing audio, size:', audioBlob.size, 'speech:', speechDetectedRef.current);
-    
+
     if (audioBlob.size === 0 || !speechDetectedRef.current) {
       console.log('[Chat] No speech detected, restarting if active...');
       if (shouldContinueRef.current) {
@@ -415,6 +421,7 @@ export function ChatView() {
     
     if (conversationActive || jarvisPhase !== 'idle') {
       isRecordingRef.current = false;
+      skipProcessAudioRef.current = true;
       if (rafIdRef.current) {
         cancelAnimationFrame(rafIdRef.current);
         rafIdRef.current = null;
