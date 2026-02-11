@@ -1,4 +1,5 @@
 import type { ChatResponse, ChatHistoryMessage, AppStatus, ChatMode, ParentProfile, DailyReport } from '../types';
+import { blobToWav } from '../utils/audioEncoder';
 
 // API base URL - uses environment variable in production, proxy in development
 const API_BASE = import.meta.env.VITE_API_URL 
@@ -118,8 +119,17 @@ export const api = {
 
   // Transcribe audio
   async transcribeAudio(audioBlob: Blob, language?: string | null): Promise<{ text: string; success: boolean }> {
+    // Convert webm/opus to WAV on the client so the server doesn't need ffmpeg
+    let wavBlob: Blob;
+    try {
+      wavBlob = await blobToWav(audioBlob);
+    } catch (e) {
+      console.warn('[Transcribe] Client-side WAV conversion failed, sending raw audio:', e);
+      wavBlob = audioBlob;
+    }
+
     const formData = new FormData();
-    formData.append('audio', audioBlob, 'recording.wav');
+    formData.append('audio', wavBlob, 'recording.wav');
 
     const langParam = language ? `?language=${language}` : '';
     const response = await fetch(`${API_BASE}/voice/transcribe${langParam}`, {
