@@ -70,6 +70,9 @@ export function ChatView() {
   const ttsResolveRef = useRef<(() => void) | null>(null);
 
   const stopTtsNow = useCallback(() => {
+    // Stop browser speech synthesis
+    window.speechSynthesis?.cancel();
+
     // Abort any in-flight TTS request
     if (ttsAbortRef.current) {
       try {
@@ -114,12 +117,27 @@ export function ChatView() {
     }
   }, []);
 
+  // Browser-native TTS fallback when server TTS fails (e.g. edge-tts blocked)
+  const speakBrowserTts = useCallback((text: string): Promise<void> => {
+    return new Promise<void>((resolve) => {
+      if (!window.speechSynthesis) { resolve(); return; }
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 0.9;
+      utterance.pitch = 1.1;
+      utterance.onend = () => resolve();
+      utterance.onerror = () => resolve();
+      window.speechSynthesis.speak(utterance);
+    });
+  }, []);
+
   const speakResponse = useCallback(
     async (text: string): Promise<void> => {
       if (!ttsEnabled) return;
 
       // Ensure we never overlap audio
       stopTtsNow();
+      window.speechSynthesis?.cancel();
 
       const seq = ++ttsSeqRef.current;
       const abortController = new AbortController();
@@ -158,16 +176,19 @@ export function ChatView() {
           audio.play().catch(cleanupAndResolve);
         });
       } catch (e) {
-        // Ignore abort errors; those are expected when switching modes quickly.
         if ((e as any)?.name === 'AbortError') return;
-        console.error('TTS error:', e);
+        // Server TTS failed -- fall back to browser speech synthesis
+        console.warn('Server TTS failed, using browser fallback:', e);
+        if (seq === ttsSeqRef.current) {
+          await speakBrowserTts(text);
+        }
       } finally {
         if (ttsAbortRef.current === abortController) {
           ttsAbortRef.current = null;
         }
       }
     },
-    [ttsEnabled, stopTtsNow]
+    [ttsEnabled, stopTtsNow, speakBrowserTts]
   );
 
   const getAudioLevel = useCallback((analyser: AnalyserNode): number => {
