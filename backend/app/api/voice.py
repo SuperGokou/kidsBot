@@ -88,7 +88,7 @@ async def transcribe_audio(audio: UploadFile = File(...), language: Optional[str
     
     wav_path = tmp_path
     converted = False
-    
+
     try:
         # Convert WebM/MP4 to WAV if needed (using ffmpeg if available)
         if is_webm or is_mp4:
@@ -110,19 +110,15 @@ async def transcribe_audio(audio: UploadFile = File(...), language: Optional[str
             except Exception as e:
                 print(f"[Transcribe] Conversion error: {e}")
                 wav_path = tmp_path
-        
+
         recognizer = sr.Recognizer()
-        
-        try:
-            with sr.AudioFile(wav_path) as source:
-                audio_data = recognizer.record(source)
-                text = recognizer.recognize_google(audio_data, language=stt_lang)
-                print(f"[Transcribe] Language: {stt_lang} | Text: {text}")
-                return {"text": text, "success": True}
-        except Exception as audio_error:
-            print(f"[Transcribe] Audio file error: {audio_error}")
-            return {"text": "", "success": False, "error": f"Could not process audio: {str(audio_error)}"}
-            
+
+        with sr.AudioFile(wav_path) as source:
+            audio_data = recognizer.record(source)
+            text = recognizer.recognize_google(audio_data, language=stt_lang)
+            print(f"[Transcribe] Language: {stt_lang} | Text: {text}")
+            return {"text": text, "success": True}
+
     except sr.UnknownValueError:
         return {"text": "", "success": False, "error": "Could not understand audio"}
     except sr.RequestError as e:
@@ -134,12 +130,12 @@ async def transcribe_audio(audio: UploadFile = File(...), language: Optional[str
         # Cleanup
         try:
             os.unlink(tmp_path)
-        except:
+        except Exception:
             pass
         if converted and wav_path != tmp_path:
             try:
                 os.unlink(wav_path)
-            except:
+            except Exception:
                 pass
 
 
@@ -164,7 +160,7 @@ async def verify_voice(audio: UploadFile = File(...)):
     finally:
         try:
             os.unlink(tmp_path)
-        except:
+        except Exception:
             pass
 
 

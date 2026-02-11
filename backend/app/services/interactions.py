@@ -60,8 +60,9 @@ def save_interaction(mode: str, user_msg: str, bot_response: str):
         existing.append(interaction)
         
         # Keep only last 7 days
-        cutoff = date.today().isoformat()
-        existing = [i for i in existing if i.get('date', '') >= cutoff[:8]]
+        from datetime import timedelta
+        cutoff = (date.today() - timedelta(days=7)).isoformat()
+        existing = [i for i in existing if i.get('date', '') >= cutoff]
         
         with open(INTERACTIONS_FILE, 'w') as f:
             json.dump(existing, f, indent=2)

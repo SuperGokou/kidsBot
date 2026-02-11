@@ -162,7 +162,7 @@ async def generate_daily_report(background_tasks: BackgroundTasks):
                 data = json.load(f)
                 today = date.today().isoformat()
                 _daily_interactions = [i for i in data if i.get('date') == today]
-        except:
+        except Exception:
             pass
     
     if not _daily_interactions:

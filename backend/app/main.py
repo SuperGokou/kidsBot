@@ -4,6 +4,7 @@ KidBot FastAPI Backend
 Main entry point for the FastAPI application.
 """
 
+import os
 import threading
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -52,7 +53,6 @@ app = FastAPI(
 )
 
 # CORS for React frontend
-import os
 FRONTEND_URL = os.getenv("FRONTEND_URL", "")
 CORS_ORIGINS = [
     "http://localhost:3000",
@@ -63,8 +63,6 @@ CORS_ORIGINS = [
 # Add production frontend URL if set
 if FRONTEND_URL:
     CORS_ORIGINS.append(FRONTEND_URL)
-# Allow all Render.com subdomains
-CORS_ORIGINS.append("https://*.onrender.com")
 
 app.add_middleware(
     CORSMiddleware,

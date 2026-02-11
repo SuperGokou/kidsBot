@@ -5,6 +5,7 @@ Handles document ingestion and semantic search using ChromaDB.
 """
 
 import json
+import uuid
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
@@ -120,8 +121,7 @@ class MemoryManager:
             return False
 
         try:
-            current_count = self.collection.count()
-            doc_id = f"memory_{current_count}"
+            doc_id = f"memory_{uuid.uuid4().hex[:12]}"
 
             if metadata is None:
                 metadata = {}

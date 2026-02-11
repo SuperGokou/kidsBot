@@ -2,6 +2,7 @@
 Chat API endpoints.
 """
 
+import json
 import re
 import threading
 from typing import Optional
@@ -168,7 +169,7 @@ async def chat_stream(request: ChatRequest):
             # Parse final response for commands
             commands, _ = parse_response(full_response)
             if commands:
-                yield f"event: commands\ndata: {commands}\n\n"
+                yield f"event: commands\ndata: {json.dumps(commands)}\n\n"
             
             yield "event: done\ndata: \n\n"
             
