@@ -1,5 +1,8 @@
 # KidBot - AI Companion for Kids
 # Root requirements file for Render.com deployment
+#
+# IMPORTANT: On Render.com, torch CPU-only must be installed FIRST via the
+# build command before this file is processed. See render.yaml buildCommand.
 
 # =============================================================================
 # Web Framework
