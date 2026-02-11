@@ -426,10 +426,14 @@ export function ChatView() {
         streamRef.current.getTracks().forEach(t => t.stop());
         streamRef.current = null;
       }
-      
+
       setJarvisPhase('speaking');
-      await speakResponse(greeting);
-      
+      try {
+        await speakResponse(greeting);
+      } catch (e) {
+        console.warn('[Chat] Mode switch greeting failed:', e);
+      }
+
       if (shouldContinueRef.current) {
         setJarvisPhase('listening');
         setIsListening(true);
@@ -439,7 +443,11 @@ export function ChatView() {
       }
     } else {
       setJarvisPhase('speaking');
-      await speakResponse(greeting);
+      try {
+        await speakResponse(greeting);
+      } catch (e) {
+        console.warn('[Chat] Mode switch greeting failed:', e);
+      }
       setJarvisPhase('idle');
     }
   }, [conversationActive, jarvisPhase, speakResponse, setJarvisPhase, setIsListening, startRecording, stopTtsNow]);
